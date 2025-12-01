@@ -1,76 +1,51 @@
-const db = require('../config/db');
+const pool = require('../config/db');
 
 class Student {
   static async findByMaSV(masv) {
     try {
-      console.log(`🔍 Đang tìm kiếm sinh viên với MSSV: ${masv}`);
-
-      // SỬA LỖI: Sử dụng câu query linh hoạt để tìm cả 'MaSV' (hoa), 'masv' (thường)
+      // LƯU Ý QUAN TRỌNG: 
+      // PostgreSQL thường yêu cầu tên cột viết hoa phải để trong dấu ngoặc kép " "
+      // Chúng ta tìm kiếm bằng cả tên cột có dấu ngoặc và không dấu để chắc chắn bắt được
       const query = `
         SELECT * FROM students 
-        WHERE "MaSV" = $1 OR "masv" = $1 OR "Masv" = $1 
+        WHERE "MaSV" = $1 OR "masv" = $1
         LIMIT 1
       `;
       
-      // Thực thi câu query đã định nghĩa ở trên
-      const result = await db.query(query, [masv]);
+      const result = await pool.query(query, [masv]);
 
       if (result.rows.length === 0) {
         return null;
       }
 
       const row = result.rows[0];
-      
-      // MAPPING DỮ LIỆU: Chuyển từ tên cột Database -> Tên biến API (CamelCase)
-      // Điều này giúp Frontend luôn nhận được 'fullName', 'dob' dù DB đặt tên gì
+
+      // --- DATA MAPPING (QUAN TRỌNG) ---
+      // Chuyển đổi dữ liệu thô từ Database sang chuẩn API
+      // Sử dụng toán tử || để chấp nhận cả trường hợp driver trả về lowercase
       return {
-        mssv: row.MaSV || row.masv || row.Masv,
-        fullName: row.Hoten || row.hoten || row.HoTen,
-        dob: row.ngaysinh || row.NgaySinh || row.dob,
-        gender: row.GioiTinh || row.gioitinh || row.gender,
-        faculty: row.lop || row.Lop || row.faculty,
-        email: row.email || row.Email,
-        phone: row.dienthoai || row.DienThoai || row.phone
+        mssv: row.MaSV || row.masv,
+        fullName: row.HoTen || row.hoten,         // DB: HoTen
+        dob: row.NgaySinh || row.ngaysinh,        // DB: NgaySinh
+        gender: row.GioiTinh || row.gioitinh,     // DB: GioiTinh
+        faculty: row.Lop || row.lop,              // DB: Lop -> Mapping sang faculty
+        email: row.email || row.Email,            // DB: email
+        phone: row.dienthoai || row.DienThoai     // DB: dienthoai
       };
 
     } catch (error) {
-      // Xử lý trường hợp bảng chưa có cột tương ứng
-      console.error("❌ Lỗi SQL trong findByMaSV:", error.message);
-      // Thử query đơn giản nếu query phức tạp thất bại
-      try {
-          const simpleResult = await db.query('SELECT * FROM students WHERE "MaSV" = $1', [masv]);
-          if (simpleResult.rows.length > 0) {
-             const row = simpleResult.rows[0];
-             return {
-                mssv: row.MaSV,
-                fullName: row.Hoten,
-                dob: row.NgaySinh,
-                gender: row.GioiTinh,
-                faculty: row.Lop,
-                email: row.email,
-                phone: row.dienthoai
-             };
-          }
-      } catch(e) { console.error('Retry failed'); }
-      
-      return null;
+      console.error("Lỗi trong Student.findByMaSV:", error);
+      throw error;
     }
   }
 
   static async findAll() {
     try {
-      const result = await db.query('SELECT * FROM students');
-      return result.rows.map(row => ({
-        mssv: row.MaSV || row.masv,
-        fullName: row.Hoten || row.hoten,
-        dob: row.ngaysinh || row.NgaySinh,
-        gender: row.GioiTinh || row.gioitinh,
-        faculty: row.lop || row.Lop,
-        email: row.email || row.Email,
-        phone: row.dienthoai || row.DienThoai
-      }));
+      const query = 'SELECT * FROM students ORDER BY "MaSV" ASC';
+      const result = await pool.query(query);
+      return result.rows;
     } catch (error) {
-      console.error("Error in findAll:", error);
+      console.error("Lỗi trong Student.findAll:", error);
       throw error;
     }
   }
