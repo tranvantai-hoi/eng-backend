@@ -2,13 +2,15 @@ const express = require('express');
 const router = express.Router();
 const registrationController = require('../controllers/registrationController');
 
-// Route gửi mã OTP (Bước 1)
+// Route 1: Gửi mã OTP
+// POST /api/registrations/send-otp
 router.post('/send-otp', registrationController.sendOtp);
 
-// Route đăng ký/xác thực OTP (Bước 2)
+// Route 2: Xác thực OTP và Đăng ký
+// POST /api/registrations
 router.post('/', registrationController.register);
 
-// Route lấy lịch sử (nếu cần)
+// Route 3: Lịch sử (nếu cần)
 router.get('/history/:mssv', registrationController.getHistory);
 
 module.exports = router;
