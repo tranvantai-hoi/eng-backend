@@ -5,40 +5,54 @@ class Student {
     try {
       console.log(`🔍 Đang tìm kiếm sinh viên với MSSV: ${masv}`);
 
-      // 1. Sửa câu Query: Bỏ ngoặc kép "" để PostgreSQL tự xử lý (linh hoạt hơn)
-      // Sử dụng $1 để tránh SQL Injection
-      const query = 'SELECT * FROM students WHERE "MaSV" = $1 OR "masv" = $1 OR masv = $1 LIMIT 1';
+      // SỬA LỖI: Sử dụng câu query linh hoạt để tìm cả 'MaSV' (hoa), 'masv' (thường)
+      const query = `
+        SELECT * FROM students 
+        WHERE "MaSV" = $1 OR "masv" = $1 OR "Masv" = $1 
+        LIMIT 1
+      `;
       
-      // Nếu bạn chắc chắn tên cột trong DB, hãy dùng câu đơn giản: 
-      // const query = 'SELECT * FROM students WHERE masv = $1'; 
-
-      const result = await db.query('SELECT * FROM students WHERE "MaSV" = $1', [masv]);
-      // Lưu ý: Nếu dòng trên lỗi, hãy thử đổi thành: 
-      // const result = await db.query('SELECT * FROM students WHERE masv = $1', [masv]);
+      // Thực thi câu query đã định nghĩa ở trên
+      const result = await db.query(query, [masv]);
 
       if (result.rows.length === 0) {
-        console.log("⚠️ Không tìm thấy bản ghi nào trong Database.");
         return null;
       }
 
       const row = result.rows[0];
-      console.log("✅ Dữ liệu thô từ DB:", row); // Xem log này để biết tên cột chính xác là 'Hoten' hay 'hoten'
-
-      // 2. Mapping dữ liệu an toàn (Chấp nhận cả viết hoa/thường)
-      // Database trả về column thường là lowercase trong object row
+      
+      // MAPPING DỮ LIỆU: Chuyển từ tên cột Database -> Tên biến API (CamelCase)
+      // Điều này giúp Frontend luôn nhận được 'fullName', 'dob' dù DB đặt tên gì
       return {
         mssv: row.MaSV || row.masv || row.Masv,
         fullName: row.Hoten || row.hoten || row.HoTen,
         dob: row.ngaysinh || row.NgaySinh || row.dob,
         gender: row.phai || row.Phai || row.gender,
-        faculty: row.lop || row.Lop || row.faculty, // Giả sử 'lop' tương đương 'faculty'
+        faculty: row.lop || row.Lop || row.faculty,
         email: row.email || row.Email,
         phone: row.dienthoai || row.DienThoai || row.phone
       };
 
     } catch (error) {
+      // Xử lý trường hợp bảng chưa có cột tương ứng
       console.error("❌ Lỗi SQL trong findByMaSV:", error.message);
-      // Không throw error để server không bị crash, trả về null
+      // Thử query đơn giản nếu query phức tạp thất bại
+      try {
+          const simpleResult = await db.query('SELECT * FROM students WHERE "MaSV" = $1', [masv]);
+          if (simpleResult.rows.length > 0) {
+             const row = simpleResult.rows[0];
+             return {
+                mssv: row.MaSV,
+                fullName: row.Hoten,
+                dob: row.ngaysinh,
+                gender: row.phai,
+                faculty: row.lop,
+                email: row.email,
+                phone: row.dienthoai
+             };
+          }
+      } catch(e) { console.error('Retry failed'); }
+      
       return null;
     }
   }
