@@ -21,33 +21,35 @@ app.use(express.urlencoded({ extended: false }));
 // ----------------------------------------------------
 
 // 1. Định nghĩa các Origin (nguồn gốc) được phép truy cập
-// Thêm localhost của bạn (nếu frontend đang chạy trên máy) và domain chính thức
 // Backend Railway URL: https://eng-backend-production.up.railway.app
-
 const allowedOrigins = [
   'http://localhost:3000', // React, Next.js (mặc định)
-  'http://localhost:3001', // Cổng phát triển khác
+  'http://localhost:3001', 
   'http://localhost:5173', // Vite (rất phổ biến)
   'http://localhost:4200', // Angular (mặc định)
-  'http://127.0.0.1:3000', // Cần phải có 127.0.0.1 nếu frontend dùng IP này
-  
+  'http://127.0.0.1:3000', 
   // NẾU BẠN ĐÃ TRIỂN KHAI FRONTEND:
-  // VÍ DỤ: Nếu frontend của bạn ở https://ten-trang-cua-ban.com
-  // THÌ BẠN PHẢI THÊM NÓ VÀO ĐÂY:
-  // 'https://ten-trang-cua-ban.com', 
+  // THAY THẾ DÒNG DƯỚI ĐÂY BẰNG URL FRONTEND THỰC TẾ CỦA BẠN
+  // VÍ DỤ: 'https://ten-frontend-cua-ban.com',
+  // HOẶC NẾU FRONTEND CŨNG Ở RAILWAY (ví dụ: https://eng-frontend-xyz.up.railway.app)
+  // THÌ PHẢI THÊM NÓ VÀO ĐÂY.
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Cho phép các Origin trong danh sách, HOẶC nếu Origin là undefined (yêu cầu từ Postman/Same Origin)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    // Logic kiểm tra an toàn hơn:
+    // 1. Cho phép nếu không có Origin (yêu cầu từ server-side hoặc Postman/cùng nguồn gốc)
+    // 2. Hoặc Origin nằm trong danh sách cho phép (allowedOrigins)
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      // In ra lỗi chi tiết để debug
+      console.error('CORS blocked request from origin: ' + origin);
       callback(new Error('Không được phép bởi CORS: ' + origin));
     }
   },
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Các phương thức HTTP được phép
-  credentials: true, // Cho phép gửi cookies/header authorization (nếu bạn có dùng auth)
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
   optionsSuccessStatus: 204
 };
 
@@ -71,4 +73,3 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`));
-module.exports = app;
