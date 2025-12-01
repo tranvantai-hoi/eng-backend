@@ -27,7 +27,7 @@ class Student {
         mssv: row.MaSV || row.masv || row.Masv,
         fullName: row.Hoten || row.hoten || row.HoTen,
         dob: row.ngaysinh || row.NgaySinh || row.dob,
-        gender: row.phai || row.Phai || row.gender,
+        gender: row.GioiTinh || row.gioitinh || row.gender,
         faculty: row.lop || row.Lop || row.faculty,
         email: row.email || row.Email,
         phone: row.dienthoai || row.DienThoai || row.phone
@@ -44,9 +44,9 @@ class Student {
              return {
                 mssv: row.MaSV,
                 fullName: row.Hoten,
-                dob: row.ngaysinh,
-                gender: row.phai,
-                faculty: row.lop,
+                dob: row.NgaySinh,
+                gender: row.GioiTinh,
+                faculty: row.Lop,
                 email: row.email,
                 phone: row.dienthoai
              };
@@ -64,7 +64,7 @@ class Student {
         mssv: row.MaSV || row.masv,
         fullName: row.Hoten || row.hoten,
         dob: row.ngaysinh || row.NgaySinh,
-        gender: row.phai || row.Phai,
+        gender: row.GioiTinh || row.gioitinh,
         faculty: row.lop || row.Lop,
         email: row.email || row.Email,
         phone: row.dienthoai || row.DienThoai
