@@ -13,6 +13,19 @@ class ExamRound {
     return result.rows[0];
   }
 
+  // --- MỚI: Tìm đợt thi đang mở ---
+  static async findActive() {
+    try {
+      // Tìm đợt thi có trạng thái 'active' (hoặc logic tương tự)
+      const query = `SELECT * FROM exam_rounds WHERE "TrangThai" = 'active' LIMIT 1`;
+      const result = await pool.query(query);
+      return result.rows[0];
+    } catch (err) {
+      console.error("Lỗi tìm đợt thi active:", err);
+      return null;
+    }
+  }
+
   static async create(data) {
     const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai } = data;
     const query = `
@@ -34,8 +47,7 @@ class ExamRound {
           "GioThi" = COALESCE($3, "GioThi"),
           "DiaDiem" = COALESCE($4, "DiaDiem"),
           "SoLuongToiDa" = COALESCE($5, "SoLuongToiDa"),
-          "TrangThai" = COALESCE($6, "TrangThai"),
-          "UpdatedAt" = CURRENT_TIMESTAMP
+          "TrangThai" = COALESCE($6, "TrangThai")
       WHERE id = $7
       RETURNING *
     `;
@@ -43,13 +55,6 @@ class ExamRound {
     const result = await pool.query(query, values);
     return result.rows[0];
   }
-
-  static async delete(id) {
-    const query = 'DELETE FROM exam_rounds WHERE id = $1 RETURNING *';
-    const result = await pool.query(query, [id]);
-    return result.rows[0];
-  }
 }
 
 module.exports = ExamRound;
-
