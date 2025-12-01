@@ -3,12 +3,11 @@ const pool = require('../config/db');
 class Student {
   static async findByMaSV(masv) {
     try {
-      // LƯU Ý QUAN TRỌNG: 
-      // PostgreSQL thường yêu cầu tên cột viết hoa phải để trong dấu ngoặc kép " "
-      // Chúng ta tìm kiếm bằng cả tên cột có dấu ngoặc và không dấu để chắc chắn bắt được
+      // Truy vấn tìm kiếm. Dùng OR để tìm cả trường hợp tên cột là "MaSV" (có ngoặc kép) hoặc masv (thường)
+      // Điều này giúp tránh lỗi "column does not exist" trong PostgreSQL
       const query = `
         SELECT * FROM students 
-        WHERE "MaSV" = $1 OR "masv" = $1
+        WHERE "MaSV" = $1 OR "masv" = $1 
         LIMIT 1
       `;
       
@@ -20,21 +19,21 @@ class Student {
 
       const row = result.rows[0];
 
-      // --- DATA MAPPING (QUAN TRỌNG) ---
-      // Chuyển đổi dữ liệu thô từ Database sang chuẩn API
-      // Sử dụng toán tử || để chấp nhận cả trường hợp driver trả về lowercase
+      // --- MAPPING DỮ LIỆU CHUẨN ---
+      // Chuyển đổi chính xác từ cột Database (bạn cung cấp) -> API Standard
+      // Sử dụng toán tử || để chấp nhận cả trường hợp Postgres trả về tên cột chữ thường (mặc định)
       return {
         mssv: row.MaSV || row.masv,
-        fullName: row.HoTen || row.hoten,         // DB: HoTen
-        dob: row.NgaySinh || row.ngaysinh,        // DB: NgaySinh
-        gender: row.GioiTinh || row.gioitinh,     // DB: GioiTinh
-        faculty: row.Lop || row.lop,              // DB: Lop -> Mapping sang faculty
-        email: row.email || row.Email,            // DB: email
-        phone: row.dienthoai || row.DienThoai     // DB: dienthoai
+        fullName: row.HoTen || row.hoten,           // DB: HoTen
+        dob: row.NgaySinh || row.ngaysinh,          // DB: NgaySinh
+        gender: row.GioiTinh || row.gioitinh,       // DB: GioiTinh (Đã sửa từ 'phai')
+        faculty: row.Lop || row.lop,                // DB: Lop
+        email: row.email || row.Email,              // DB: email
+        phone: row.dienthoai || row.DienThoai       // DB: dienthoai
       };
 
     } catch (error) {
-      console.error("Lỗi trong Student.findByMaSV:", error);
+      console.error("Lỗi SQL trong Student.findByMaSV:", error);
       throw error;
     }
   }
@@ -45,7 +44,7 @@ class Student {
       const result = await pool.query(query);
       return result.rows;
     } catch (error) {
-      console.error("Lỗi trong Student.findAll:", error);
+      console.error("Error in findAll:", error);
       throw error;
     }
   }
