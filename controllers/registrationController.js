@@ -2,81 +2,74 @@ const Registration = require('../models/Registration');
 const ExamRound = require('../models/ExamRound');
 const Student = require('../models/Student');
 
-// --- GỬI MÃ OTP ---
+// API 1: Gửi OTP
 exports.sendOtp = async (req, res) => {
   try {
     const { mssv, email } = req.body;
     if (!mssv || !email) {
-      return res.status(400).json({ message: 'Vui lòng cung cấp MSSV và Email.' });
+      return res.status(400).json({ message: 'Vui lòng nhập MSSV và Email.' });
     }
 
-    // 1. Tìm đợt thi đang mở (Active)
+    // 1. Tìm đợt thi active
     const activeRound = await ExamRound.findActive();
     if (!activeRound) {
-      return res.status(400).json({ message: 'Hiện tại không có đợt thi nào đang mở đăng ký.' });
+      return res.status(400).json({ message: 'Chưa có đợt thi nào được mở.' });
     }
 
-    // 2. Kiểm tra nếu đã đăng ký thành công rồi
-    const existingReg = await Registration.findByStudentAndRound(mssv, activeRound.id);
-    // Nếu trạng thái khác 'verifying' tức là đã đăng ký xong (pending/confirmed)
-    if (existingReg && existingReg.TrangThai !== 'verifying') {
+    // 2. Kiểm tra trạng thái
+    const existing = await Registration.findByStudentAndRound(mssv, activeRound.id);
+    if (existing && existing.TrangThai !== 'verifying') {
       return res.status(400).json({ message: 'Bạn đã đăng ký đợt thi này rồi.' });
     }
 
-    // 3. Tạo OTP (6 số ngẫu nhiên)
+    // 3. Tạo và lưu OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // 4. Lưu vào DB
     await Registration.saveOtp(mssv, activeRound.id, otp);
 
-    // 5. Giả lập gửi Email (Log ra console)
-    console.log(`📧 [MOCK EMAIL] Gửi OTP: ${otp} tới ${email}`);
+    // 4. Log OTP ra console (Giả lập gửi mail)
+    console.log(`==========================================`);
+    console.log(`📧 EMAIL MÔ PHỎNG: Gửi tới ${email}`);
+    console.log(`🔑 MÃ OTP: ${otp}`);
+    console.log(`==========================================`);
 
     res.json({ 
-      status: 'success',
-      message: 'Mã xác thực đã được gửi tới email.',
-      debugOtp: otp // Chỉ dùng khi dev để test nhanh
+      message: 'Mã xác thực đã được gửi (Vui lòng kiểm tra console server).',
+      debugOtp: otp 
     });
 
   } catch (error) {
     console.error("Lỗi gửi OTP:", error);
-    res.status(500).json({ message: 'Lỗi server khi gửi mã OTP.' });
+    res.status(500).json({ message: 'Lỗi hệ thống khi gửi OTP.' });
   }
 };
 
-// --- XÁC THỰC & ĐĂNG KÝ ---
+// API 2: Xác thực & Đăng ký
 exports.register = async (req, res) => {
   try {
     const { mssv, email, phone, otp } = req.body;
     
     if (!mssv || !otp) {
-      return res.status(400).json({ message: 'Thiếu thông tin xác thực (MSSV/OTP).' });
+      return res.status(400).json({ message: 'Thiếu mã số sinh viên hoặc OTP.' });
     }
 
     const activeRound = await ExamRound.findActive();
     if (!activeRound) {
-      return res.status(400).json({ message: 'Không tìm thấy đợt thi đang mở.' });
+      return res.status(400).json({ message: 'Không tìm thấy đợt thi.' });
     }
 
-    // 1. Cập nhật thông tin liên lạc mới nhất cho Sinh viên
+    // Cập nhật thông tin liên lạc
     if (email || phone) {
-      try {
-        await Student.updateContactInfo(mssv, email, phone);
-      } catch (err) {
-        console.warn("Không thể cập nhật thông tin liên lạc:", err.message);
-        // Không chặn luồng đăng ký nếu update thông tin thất bại
-      }
+       await Student.updateContactInfo(mssv, email, phone);
     }
 
-    // 2. Xác thực OTP và Chuyển trạng thái đơn đăng ký
+    // Xác thực OTP
     const result = await Registration.verifyAndComplete(mssv, activeRound.id, otp);
 
     if (!result) {
-      return res.status(400).json({ message: 'Mã OTP không chính xác hoặc đã hết hạn.' });
+      return res.status(400).json({ message: 'Mã OTP không chính xác.' });
     }
 
     res.status(201).json({
-      status: 'success',
       message: 'Đăng ký thành công!',
       data: result
     });
@@ -87,8 +80,4 @@ exports.register = async (req, res) => {
   }
 };
 
-// --- CÁC HÀM PHỤ KHÁC ---
-exports.getHistory = async (req, res) => {
-    // Logic lấy lịch sử (nếu cần)
-    res.json({ data: [] });
-};
+exports.getHistory = async (req, res) => { res.json({data:[]}) };
