@@ -1,107 +1,45 @@
 const Registration = require('../models/Registration');
-const Student = require('../models/Student');
 const ExamRound = require('../models/ExamRound');
+const Student = require('../models/Student');
 
-const createRegistration = async (req, res, next) => {
+exports.sendOtp = async (req, res) => {
   try {
-    const { MaSV, RoundId, TrangThai } = req.body;
+    const { mssv, email } = req.body;
+    if (!mssv || !email) return res.status(400).json({ message: 'Thiếu thông tin.' });
 
-    if (!MaSV || !RoundId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: MaSV, RoundId'
-      });
-    }
+    const activeRound = await ExamRound.findActive();
+    if (!activeRound) return res.status(400).json({ message: 'Chưa có đợt thi nào mở.' });
 
-    // Check if student exists
-    const student = await Student.findByMaSV(MaSV);
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student not found'
-      });
-    }
+    // Tạo OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await Registration.saveOtp(mssv, activeRound.id, otp);
 
-    // Check if exam round exists
-    const round = await ExamRound.findById(RoundId);
-    if (!round) {
-      return res.status(404).json({
-        success: false,
-        message: 'Exam round not found'
-      });
-    }
-
-    // Check if already registered
-    const existing = await Registration.checkExisting(MaSV, RoundId);
-    if (existing) {
-      return res.status(409).json({
-        success: false,
-        message: 'Student already registered for this exam round'
-      });
-    }
-
-    const registration = await Registration.create({
-      MaSV,
-      RoundId,
-      TrangThai
-    });
-
-    res.status(201).json({
-      success: true,
-      data: registration
-    });
-  } catch (error) {
-    next(error);
+    console.log(`>>> OTP cho ${email}: ${otp}`); // Xem console server để lấy mã
+    res.json({ message: 'OTP đã gửi (check console)', debugOtp: otp });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Lỗi server' });
   }
 };
 
-const getRegistrationById = async (req, res, next) => {
+exports.register = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { mssv, email, phone, otp } = req.body;
+    const activeRound = await ExamRound.findActive();
+    if (!activeRound) return res.status(400).json({ message: 'Đợt thi đã đóng.' });
 
-    const registration = await Registration.findById(id);
-    if (!registration) {
-      return res.status(404).json({
-        success: false,
-        message: 'Registration not found'
-      });
-    }
+    // Cập nhật thông tin SV
+    if (email || phone) await Student.updateContactInfo(mssv, email, phone);
 
-    res.status(200).json({
-      success: true,
-      data: registration
-    });
-  } catch (error) {
-    next(error);
+    // Verify
+    const result = await Registration.verifyAndComplete(mssv, activeRound.id, otp);
+    if (!result) return res.status(400).json({ message: 'OTP sai.' });
+
+    res.status(201).json({ message: 'Thành công!', data: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Lỗi đăng ký' });
   }
 };
 
-const getRegistrationsByRound = async (req, res, next) => {
-  try {
-    const { roundId } = req.params;
-
-    const round = await ExamRound.findById(roundId);
-    if (!round) {
-      return res.status(404).json({
-        success: false,
-        message: 'Exam round not found'
-      });
-    }
-
-    const registrations = await Registration.findByRoundId(roundId);
-    res.status(200).json({
-      success: true,
-      data: registrations,
-      count: registrations.length
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-module.exports = {
-  createRegistration,
-  getRegistrationById,
-  getRegistrationsByRound
-};
-
+exports.getHistory = async (req, res) => { res.json({data:[]}) };
