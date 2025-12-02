@@ -1,27 +1,24 @@
 const pool = require('../config/db');
 
 class ExamRound {
-  // ... giữ nguyên các hàm findAll, findById ...
-
- static async findActive() {
-    try {
-      // SỬA LỖI:
-      // 1. Bỏ ngoặc kép quanh tên cột (để Postgres tự hiểu là trangthai hoặc TrangThai)
-      // 2. Dùng ILIKE để so sánh không phân biệt hoa thường (Active, active, ACTIVE đều nhận)
-      const query = "SELECT * FROM exam_rounds WHERE \"TrangThai\" ILIKE 'active' LIMIT 1";
-      
-      const result = await pool.query(query);
-      return result.rows[0];
-    } catch (err) {
-      console.error("Lỗi tìm đợt thi active:", err);
-      return null;
-    }
-  }
-
   static async findAll() {
+    const query = 'SELECT * FROM exam_rounds ORDER BY "NgayThi" DESC';
+    const result = await pool.query(query);
+    return result.rows;
+  }
+
+  static async findById(id) {
+    const query = 'SELECT * FROM exam_rounds WHERE id = $1';
+    const result = await pool.query(query, [id]);
+    return result.rows[0];
+  }
+
+  // --- [MỚI] Hàm tìm đợt thi đang Active ---
+  static async findActive() {
     try {
-      // Tìm đợt thi 
-      const query = "SELECT * FROM exam_rounds order by id";
+      // Sử dụng ILIKE để tìm 'active' không phân biệt hoa thường
+      // Giữ nguyên dấu ngoặc kép "TrangThai" để đồng bộ với các hàm khác trong file
+      const query = `SELECT * FROM exam_rounds WHERE "TrangThai" ILIKE 'active' LIMIT 1`;
       const result = await pool.query(query);
       return result.rows[0];
     } catch (err) {
@@ -29,7 +26,43 @@ class ExamRound {
       return null;
     }
   }
-  
+
+  static async create(data) {
+    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai } = data;
+    const query = `
+      INSERT INTO exam_rounds ("TenDot", "NgayThi", "GioThi", "DiaDiem", "SoLuongToiDa", "TrangThai")
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `;
+    const values = [TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai || 'active'];
+    const result = await pool.query(query, values);
+    return result.rows[0];
+  }
+
+  static async update(id, data) {
+    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai } = data;
+    const query = `
+      UPDATE exam_rounds
+      SET "TenDot" = COALESCE($1, "TenDot"),
+          "NgayThi" = COALESCE($2, "NgayThi"),
+          "GioThi" = COALESCE($3, "GioThi"),
+          "DiaDiem" = COALESCE($4, "DiaDiem"),
+          "SoLuongToiDa" = COALESCE($5, "SoLuongToiDa"),
+          "TrangThai" = COALESCE($6, "TrangThai"),
+          "UpdatedAt" = CURRENT_TIMESTAMP
+      WHERE id = $7
+      RETURNING *
+    `;
+    const values = [TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai, id];
+    const result = await pool.query(query, values);
+    return result.rows[0];
+  }
+
+  static async delete(id) {
+    const query = 'DELETE FROM exam_rounds WHERE id = $1 RETURNING *';
+    const result = await pool.query(query, [id]);
+    return result.rows[0];
+  }
 }
 
 module.exports = ExamRound;
