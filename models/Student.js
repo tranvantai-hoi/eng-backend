@@ -36,7 +36,10 @@ class Student {
       dob: dbRecord.NgaySinh,
       
       // Frontend: gender <-- DB: GioiTinh (Xử lý chuẩn hóa Nam/Nữ)
-      gender: this.normalizeGender(dbRecord.GioiTinh),
+      gender: dbRecord.GioiTinh,
+
+      // Frontend: faculty <-- DB: Lop
+      faculty: dbRecord.Lop,
       
       // Frontend: email <-- DB: email
       email: dbRecord.email,
@@ -46,19 +49,7 @@ class Student {
     };
   }
 
-  // Hàm phụ trợ để chuẩn hóa giới tính về dạng 'male'/'female' cho Frontend select box
-  static normalizeGender(val) {
-    if (!val) return '';
-    const s = String(val).trim().toLowerCase();
-    
-    // Các trường hợp là Nam
-    if (['1', 'true', 'nam', 'male', 'm', 'trai'].includes(s)) return 'male';
-    
-    // Các trường hợp là Nữ
-    if (['0', 'false', 'nu', 'nữ', 'female', 'f', 'gái'].includes(s)) return 'female';
-    
-    return 'other';
-  }
+  
 }
 
 module.exports = Student;
