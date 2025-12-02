@@ -20,12 +20,12 @@ class Registration {
   static async saveOtp(maSV, roundId, otp) {
     const existing = await this.findByStudentAndRound(maSV, roundId);
     if (existing) {
-      // Update (giả sử DB dùng cột hoa)
-      const query = 'UPDATE registrations SET "OTP" = $1, "UpdatedAt" = NOW() WHERE "MaSV" = $2 AND "RoundId" = $3';
+      // Update 
+      const query = 'UPDATE registrations SET "otp" = $1, "UpdatedAt" = NOW() WHERE "MaSV" = $2 AND "RoundId" = $3';
       await pool.query(query, [otp, maSV, roundId]);
     } else {
       // Insert
-      const query = 'INSERT INTO registrations ("MaSV", "RoundId", "TrangThai", "OTP") VALUES ($1, $2, $3, $4)';
+      const query = 'INSERT INTO registrations ("MaSV", "RoundId", "TrangThai", "otp") VALUES ($1, $2, $3, $4)';
       await pool.query(query, [maSV, roundId, 'verifying', otp]);
     }
   }
@@ -33,8 +33,8 @@ class Registration {
   static async verifyAndComplete(maSV, roundId, otp) {
     const query = `
       UPDATE registrations 
-      SET "TrangThai" = 'pending', "OTP" = NULL 
-      WHERE "MaSV" = $1 AND "RoundId" = $2 AND "OTP" = $3 
+      SET "TrangThai" = 'pending', "otp" = NULL 
+      WHERE "MaSV" = $1 AND "RoundId" = $2 AND "otp" = $3 
       RETURNING *
     `;
     const result = await pool.query(query, [maSV, roundId, otp]);
