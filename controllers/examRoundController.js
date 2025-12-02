@@ -1,5 +1,18 @@
 const ExamRound = require('../models/ExamRound');
 
+const getRoundActive = async (req, res, next) => {
+  try {
+    const rounds = await ExamRound.findActive();
+    res.status(200).json({
+      success: true,
+      data: rounds,
+      count: rounds.length
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getRounds = async (req, res, next) => {
   try {
     const rounds = await ExamRound.findAll();
@@ -13,18 +26,6 @@ const getRounds = async (req, res, next) => {
   }
 };
 
-const active = async (req, res, next) => {
-  try {
-    const rounds = await ExamRound.findActive();
-    res.status(200).json({
-      success: true,
-      data: rounds,
-      count: rounds.length
-    });
-  } catch (error) {
-    next(error);
-  }
-};
 
 const createRound = async (req, res, next) => {
   try {
@@ -101,6 +102,7 @@ const deleteRound = async (req, res, next) => {
 };
 
 module.exports = {
+  getRoundActive,
   getRounds,
   createRound,
   updateRound,
