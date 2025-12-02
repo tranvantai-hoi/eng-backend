@@ -1,14 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const registrationController = require('../controllers/registrationController');
+const {
+  createRegistration,
+  getRegistrationById,
+  getRegistrationsByRound
+} = require('../controllers/registrationController');
 
-// POST /api/registrations/send-otp
-router.post('/send-otp', registrationController.sendOtp);
+// Route đăng ký mới
+router.post('/', createRegistration);
 
-// POST /api/registrations (Xác thực & Đăng ký)
-router.post('/', registrationController.register);
+// Route lấy chi tiết đăng ký
+router.get('/:id', getRegistrationById);
 
-// GET /api/registrations/history/:mssv
-router.get('/history/:mssv', registrationController.getHistory);
+// Route lấy danh sách đăng ký theo đợt thi
+router.get('/by-round/:roundId', getRegistrationsByRound);
 
 module.exports = router;
