@@ -2,13 +2,25 @@ const ExamRound = require('../models/ExamRound');
 
 const getRoundActive = async (req, res, next) => {
   try {
-    const rounds = await ExamRound.findActive();
+    // Gọi hàm tìm kiếm từ Model
+    const activeRound = await ExamRound.findActive();
+
+    // Kiểm tra nếu không tìm thấy đợt nào
+    if (!activeRound) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hiện tại không có đợt thi nào đang mở (Active).'
+      });
+    }
+
+    // Trả về kết quả (Lưu ý: activeRound là Object, không phải Array)
     res.status(200).json({
       success: true,
-      data: rounds,
-      count: rounds.length
+      data: activeRound
     });
+
   } catch (error) {
+    console.error("Lỗi Controller getRoundActive:", error);
     next(error);
   }
 };
