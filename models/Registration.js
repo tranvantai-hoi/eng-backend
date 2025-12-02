@@ -1,44 +1,47 @@
 const pool = require('../config/db');
 
 class Registration {
-  static async findByStudentAndRound(maSV, roundId) {
-    try {
-      // Query an toàn: Thử cột hoa trước
-      const query = 'SELECT * FROM registrations WHERE "MaSV" = $1 AND "RoundId" = $2';
-      const result = await pool.query(query, [maSV, roundId]);
-      return result.rows[0];
-    } catch (err) {
-       // Fallback cột thường
-       if (err.code === '42703') {
-          const res = await pool.query('SELECT * FROM registrations WHERE masv = $1 AND roundid = $2', [maSV, roundId]);
-          return res.rows[0];
-       }
-       return null;
-    }
+  static async findById(id) {
+    const query = 'SELECT * FROM registrations WHERE id = $1';
+    const result = await pool.query(query, [id]);
+    return result.rows[0];
   }
 
-  static async saveOtp(maSV, roundId, otp) {
-    const existing = await this.findByStudentAndRound(maSV, roundId);
-    if (existing) {
-      // Update 
-      const query = 'UPDATE registrations SET "otp" = $1, "UpdatedAt" = NOW() WHERE "MaSV" = $2 AND "RoundId" = $3';
-      await pool.query(query, [otp, maSV, roundId]);
-    } else {
-      // Insert
-      const query = 'INSERT INTO registrations ("MaSV", "RoundId", "TrangThai", "otp") VALUES ($1, $2, $3, $4)';
-      await pool.query(query, [maSV, roundId, 'verifying', otp]);
-    }
-  }
-
-  static async verifyAndComplete(maSV, roundId, otp) {
+  static async findByRoundId(roundId) {
+    // Join bảng để lấy thông tin chi tiết
     const query = `
-      UPDATE registrations 
-      SET "TrangThai" = 'pending', "otp" = NULL 
-      WHERE "MaSV" = $1 AND "RoundId" = $2 AND "otp" = $3 
+      SELECT r.*, s."HoTen", s."Lop", s."MaSV", er."TenDot", er."NgayThi", er."GioThi"
+      FROM registrations r
+      JOIN students s ON r."MaSV" = s."MaSV"
+      JOIN exam_rounds er ON r."RoundId" = er.id
+      WHERE r."RoundId" = $1
+      ORDER BY r."CreatedAt" DESC
+    `;
+    const result = await pool.query(query, [roundId]);
+    return result.rows;
+  }
+
+  static async create(data) {
+    const { MaSV, RoundId, TrangThai } = data;
+    
+    // Lưu ý: Đảm bảo tên cột trong DB khớp chính xác (MaSV hay masv)
+    // Ở đây tôi dùng "MaSV" theo code cũ của bạn
+    const query = `
+      INSERT INTO registrations ("MaSV", "RoundId", "TrangThai", "CreatedAt")
+      VALUES ($1, $2, $3, NOW())
       RETURNING *
     `;
-    const result = await pool.query(query, [maSV, roundId, otp]);
+    const values = [MaSV, RoundId, TrangThai || 'pending'];
+    
+    const result = await pool.query(query, values);
+    return result.rows[0];
+  }
+
+  static async checkExisting(MaSV, RoundId) {
+    const query = 'SELECT * FROM registrations WHERE "MaSV" = $1 AND "RoundId" = $2';
+    const result = await pool.query(query, [MaSV, RoundId]);
     return result.rows[0];
   }
 }
+
 module.exports = Registration;
