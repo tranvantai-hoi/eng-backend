@@ -13,6 +13,19 @@ const getRounds = async (req, res, next) => {
   }
 };
 
+const active = async (req, res, next) => {
+  try {
+    const rounds = await ExamRound.findActive();
+    res.status(200).json({
+      success: true,
+      data: rounds,
+      count: rounds.length
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const createRound = async (req, res, next) => {
   try {
     const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai } = req.body;
