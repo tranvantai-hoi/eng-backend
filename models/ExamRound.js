@@ -3,11 +3,13 @@ const pool = require('../config/db');
 class ExamRound {
   // ... giữ nguyên các hàm findAll, findById ...
 
-  static async findActive() {
+ static async findActive() {
     try {
-      // Tìm đợt thi có trạng thái 'active'.
-      // Lưu ý: Sửa "TrangThai" thành trangthai (thường) hoặc bỏ ngoặc kép để Postgres tự xử lý
-      const query = "SELECT * FROM exam_rounds WHERE \"TrangThai\" = 'active' LIMIT 1";
+      // SỬA LỖI:
+      // 1. Bỏ ngoặc kép quanh tên cột (để Postgres tự hiểu là trangthai hoặc TrangThai)
+      // 2. Dùng ILIKE để so sánh không phân biệt hoa thường (Active, active, ACTIVE đều nhận)
+      const query = "SELECT * FROM exam_rounds WHERE TrangThai ILIKE 'active' LIMIT 1";
+      
       const result = await pool.query(query);
       return result.rows[0];
     } catch (err) {
@@ -18,8 +20,7 @@ class ExamRound {
 
   static async findAll() {
     try {
-      // Tìm đợt thi có trạng thái 'active'.
-      // Lưu ý: Sửa "TrangThai" thành trangthai (thường) hoặc bỏ ngoặc kép để Postgres tự xử lý
+      // Tìm đợt thi 
       const query = "SELECT * FROM exam_rounds order by id";
       const result = await pool.query(query);
       return result.rows[0];
