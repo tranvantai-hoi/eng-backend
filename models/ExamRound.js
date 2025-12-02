@@ -8,7 +8,7 @@ class ExamRound {
       // SỬA LỖI:
       // 1. Bỏ ngoặc kép quanh tên cột (để Postgres tự hiểu là trangthai hoặc TrangThai)
       // 2. Dùng ILIKE để so sánh không phân biệt hoa thường (Active, active, ACTIVE đều nhận)
-      const query = "SELECT * FROM exam_rounds" WHERE \"TrangThai\" ILIKE 'active' LIMIT 1";
+      const query = "SELECT * FROM exam_rounds WHERE \"TrangThai\" ILIKE 'active' LIMIT 1";
       
       const result = await pool.query(query);
       return result.rows[0];
