@@ -1,45 +1,120 @@
 const Registration = require('../models/Registration');
-const ExamRound = require('../models/ExamRound');
 const Student = require('../models/Student');
+const ExamRound = require('../models/ExamRound');
 
-exports.sendOtp = async (req, res) => {
+const createRegistration = async (req, res, next) => {
   try {
-    const { mssv, email } = req.body;
-    if (!mssv || !email) return res.status(400).json({ message: 'Thiếu thông tin.' });
+    // 1. Nhận dữ liệu từ Frontend (Lưu ý: Frontend gửi mssv và sessionId)
+    const { mssv, sessionId, email, phone } = req.body;
 
-    const activeRound = await ExamRound.findActive();
-    if (!activeRound) return res.status(400).json({ message: 'Không có đợt thi mở.' });
+    // 2. Validate dữ liệu đầu vào
+    if (!mssv || !sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin bắt buộc: MSSV hoặc Đợt thi (sessionId)'
+      });
+    }
 
-    // Tạo OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    await Registration.saveOtp(mssv, activeRound.id, otp);
+    // Map sang tên biến mà Model/Database yêu cầu
+    const MaSV = mssv;
+    const RoundId = sessionId;
 
-    console.log(`>>> OTP for ${email}: ${otp}`); // Check terminal for OTP
-    res.json({ message: 'Đã gửi OTP.', debugOtp: otp });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Lỗi server.' });
+    // 3. Kiểm tra sinh viên có tồn tại không
+    const student = await Student.findByMaSV(MaSV);
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: `Không tìm thấy sinh viên có mã ${MaSV}`
+      });
+    }
+
+    // (Tùy chọn) Tại đây bạn có thể cập nhật Email/Phone cho sinh viên nếu cần
+    // Nhưng để an toàn theo yêu cầu "chỉ sửa 3 file", ta bỏ qua bước update student
+
+    // 4. Kiểm tra đợt thi có tồn tại không
+    const round = await ExamRound.findById(RoundId);
+    if (!round) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đợt thi này'
+      });
+    }
+
+    // 5. Kiểm tra xem sinh viên đã đăng ký đợt này chưa
+    const existing = await Registration.checkExisting(MaSV, RoundId);
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        message: 'Sinh viên đã đăng ký đợt thi này rồi'
+      });
+    }
+
+    // 6. Tạo đăng ký mới
+    const registration = await Registration.create({
+      MaSV,
+      RoundId,
+      TrangThai: 'pending' // Mặc định là chờ duyệt/xử lý
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Đăng ký thành công!',
+      data: registration
+    });
+
+  } catch (error) {
+    console.error("Lỗi tạo đăng ký:", error); // Log lỗi ra console server để dễ debug
+    next(error);
   }
 };
 
-exports.register = async (req, res) => {
+const getRegistrationById = async (req, res, next) => {
   try {
-    const { mssv, email, phone, otp } = req.body;
-    const activeRound = await ExamRound.findActive();
+    const { id } = req.params;
+    const registration = await Registration.findById(id);
     
-    if (!activeRound) return res.status(400).json({ message: 'Đợt thi đã đóng.' });
+    if (!registration) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy bản ghi đăng ký'
+      });
+    }
 
-    // Update contact
-    if (email || phone) await Student.updateContactInfo(mssv, email, phone);
-
-    // Verify
-    const result = await Registration.verifyAndComplete(mssv, activeRound.id, otp);
-    if (!result) return res.status(400).json({ message: 'OTP sai hoặc hết hạn.' });
-
-    res.json({ message: 'Đăng ký thành công!', data: result });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Lỗi đăng ký.' });
+    res.status(200).json({
+      success: true,
+      data: registration
+    });
+  } catch (error) {
+    next(error);
   }
 };
-exports.getHistory = async (req, res) => { res.json({data:[]}) };
+
+const getRegistrationsByRound = async (req, res, next) => {
+  try {
+    const { roundId } = req.params;
+
+    // Kiểm tra round tồn tại
+    const round = await ExamRound.findById(roundId);
+    if (!round) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đợt thi'
+      });
+    }
+
+    const registrations = await Registration.findByRoundId(roundId);
+    res.status(200).json({
+      success: true,
+      data: registrations,
+      count: registrations.length
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  createRegistration,
+  getRegistrationById,
+  getRegistrationsByRound
+};
