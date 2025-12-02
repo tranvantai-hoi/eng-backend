@@ -15,8 +15,20 @@ class ExamRound {
       return null;
     }
   }
+
+  static async findAll() {
+    try {
+      // Tìm đợt thi có trạng thái 'active'.
+      // Lưu ý: Sửa "TrangThai" thành trangthai (thường) hoặc bỏ ngoặc kép để Postgres tự xử lý
+      const query = "SELECT * FROM exam_rounds order by id";
+      const result = await pool.query(query);
+      return result.rows[0];
+    } catch (err) {
+      console.error("Lỗi tìm đợt thi active:", err);
+      return null;
+    }
+  }
   
-  // ... giữ nguyên các hàm create, update ...
 }
 
 module.exports = ExamRound;
