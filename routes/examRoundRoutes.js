@@ -7,7 +7,7 @@ const {
   updateRound,
   deleteRound
 } = require('../controllers/examRoundController');
-router.get('/', getRoundActive);
+router.get('/active', getRoundActive);
 router.get('/', getRounds);
 router.post('/', createRound);
 router.put('/:id', updateRound);
