@@ -9,7 +9,7 @@ const getRoundActive = async (req, res, next) => {
     if (!activeRound) {
       return res.status(404).json({
         success: false,
-        message: 'Hiện tại không có đợt thi nào đang mở (Active).'
+        message: 'Hiện tại không có đợt kiểm tra nào đang mở.'
       });
     }
 
