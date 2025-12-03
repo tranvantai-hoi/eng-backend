@@ -1,19 +1,56 @@
 const Registration = require('../models/Registration');
 const Student = require('../models/Student');
 const ExamRound = require('../models/ExamRound');
+const Otp = require('../models/Otp'); // <--- Import Model mới
+// const mailer = require('../utils/mailer'); // Giả sử bạn có module gửi mail
+
+// --- HÀM MỚI: Gửi OTP ---
+const sendOtp = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Vui lòng cung cấp email' });
+
+    // 1. Tạo mã ngẫu nhiên 6 số
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 2. Lưu vào DB
+    await Otp.create({ email, code });
+
+    // 3. Gửi email (Ở đây mình log ra console để test trước)
+    console.log(`[OTP] Mã xác thực gửi đến ${email}: ${code}`);
+    // await mailer.send(email, "Mã xác thực đăng ký thi", `Mã của bạn là: ${code}`);
+
+    res.status(200).json({ success: true, message: 'Đã gửi mã OTP' });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const createRegistration = async (req, res, next) => {
   try {
-    // 1. Nhận dữ liệu từ Frontend (Lưu ý: Frontend gửi mssv và sessionId)
-    const { mssv, sessionId, email, phone } = req.body;
+    const { mssv, sessionId, email, phone, otp } = req.body; // Thêm otp - Bắt đầu phần mới thêm
 
-    // 2. Validate dữ liệu đầu vào
-    if (!mssv || !sessionId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Thiếu thông tin bắt buộc: MSSV hoặc Đợt thi (sessionId)'
-      });
+    // Validate cơ bản
+    if (!mssv || !sessionId || !otp) {
+      return res.status(400).json({ message: 'Thiếu thông tin (MSSV, Đợt thi hoặc OTP)' });
     }
+
+    // 1. XÁC THỰC OTP QUAN TRỌNG
+    const validOtp = await Otp.findValidOtp(email, otp);
+    if (!validOtp) {
+      return res.status(400).json({ message: 'Mã OTP không chính xác hoặc đã hết hạn' });
+    }
+
+    // 1.2. Tạo đăng ký
+    const registration = await Registration.create({
+      MaSV: mssv,
+      RoundId: sessionId,
+      TrangThai: 'pending'
+    });
+
+    // 1.3. Đánh dấu OTP đã dùng (để không dùng lại được)
+    await Otp.markAsUsed(validOtp.id);
+    res.status(201).json({ success: true, data: registration }); //Hết phần mới thêm
 
     // Map sang tên biến mà Model/Database yêu cầu
     const MaSV = mssv;
@@ -114,6 +151,7 @@ const getRegistrationsByRound = async (req, res, next) => {
 };
 
 module.exports = {
+  sendOtp, // Export thêm hàm này
   createRegistration,
   getRegistrationById,
   getRegistrationsByRound
