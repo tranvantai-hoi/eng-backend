@@ -2,25 +2,23 @@ const express = require('express');
 const router = express.Router();
 const {
   createRegistration,
-  sendOtp, // Import hàm mới
+  sendOtp, 
   getRegistrationById,
   getRegistrationsByRound
 } = require('../controllers/registrationController');
 
-router.post('/', createRegistration); // Đăng ký (kèm OTP)
-router.post('/send-otp', sendOtp);    // Route mới để gửi OTP
+// --- ĐỊNH NGHĨA ROUTES ---
 
-// ... các route khác giữ nguyên
-router.get('/:id', getRegistrationById);
-router.get('/by-round/:roundId', getRegistrationsByRound);
+// 1. Gửi mã OTP (Bước 1 của quy trình đăng ký)
+router.post('/send-otp', sendOtp);
 
-// Route đăng ký mới
+// 2. Tạo đăng ký thi (Bước cuối, cần kèm OTP)
 router.post('/', createRegistration);
 
-// Route lấy chi tiết đăng ký
+// 3. Lấy chi tiết một bản đăng ký theo ID
 router.get('/:id', getRegistrationById);
 
-// Route lấy danh sách đăng ký theo đợt thi
+// 4. Lấy danh sách đăng ký theo Đợt thi (cho Admin)
 router.get('/by-round/:roundId', getRegistrationsByRound);
 
 module.exports = router;
