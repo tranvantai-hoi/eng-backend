@@ -1,7 +1,8 @@
 const Registration = require('../models/Registration');
 const Student = require('../models/Student');
 const ExamRound = require('../models/ExamRound');
-const Otp = require('../models/Otp');
+// SỬA LỖI: Tên file là otp.js nên phải require đúng tên (chữ thường)
+const Otp = require('../models/otp');
 
 // --- 1. Gửi OTP ---
 const sendOtp = async (req, res, next) => {
@@ -15,7 +16,7 @@ const sendOtp = async (req, res, next) => {
     // Lưu vào DB
     await Otp.create({ email, code });
 
-    // Gửi email (Mockup: Log ra console server để test)
+    // Log ra console để bạn thấy mã (Thay bằng gửi email thật sau này)
     console.log(`[OTP SYSTEM] Mã xác thực gửi đến ${email}: ${code}`);
     
     res.status(200).json({ success: true, message: 'Đã gửi mã OTP thành công' });
@@ -30,7 +31,7 @@ const createRegistration = async (req, res, next) => {
   try {
     const { mssv, sessionId, email, phone, otp } = req.body;
 
-    // --- BƯỚC 1: Validate đầu vào ---
+    // Validate đầu vào
     if (!mssv || !sessionId || !otp) {
       return res.status(400).json({ 
         success: false, 
@@ -38,7 +39,7 @@ const createRegistration = async (req, res, next) => {
       });
     }
 
-    // --- BƯỚC 2: Kiểm tra OTP (Quan trọng nhất - Check trước) ---
+    // BƯỚC 1: Kiểm tra OTP
     const validOtp = await Otp.findValidOtp(email, otp);
     if (!validOtp) {
       return res.status(400).json({ 
@@ -47,7 +48,7 @@ const createRegistration = async (req, res, next) => {
       });
     }
 
-    // --- BƯỚC 3: Kiểm tra Sinh viên có tồn tại không ---
+    // BƯỚC 2: Kiểm tra Sinh viên
     const student = await Student.findByMaSV(mssv);
     if (!student) {
       return res.status(404).json({
@@ -56,7 +57,7 @@ const createRegistration = async (req, res, next) => {
       });
     }
 
-    // --- BƯỚC 4: Kiểm tra Đợt thi có tồn tại không ---
+    // BƯỚC 3: Kiểm tra Đợt thi
     const round = await ExamRound.findById(sessionId);
     if (!round) {
       return res.status(404).json({
@@ -65,7 +66,7 @@ const createRegistration = async (req, res, next) => {
       });
     }
 
-    // --- BƯỚC 5: Kiểm tra đã đăng ký chưa (Tránh trùng lặp) ---
+    // BƯỚC 4: Kiểm tra Trùng lặp
     const existing = await Registration.checkExisting(mssv, sessionId);
     if (existing) {
       return res.status(409).json({
@@ -74,17 +75,18 @@ const createRegistration = async (req, res, next) => {
       });
     }
 
-    // --- BƯỚC 6: Tạo đăng ký mới (Khi mọi thứ đã OK) ---
+    // BƯỚC 5: Tạo đăng ký
     const registration = await Registration.create({
       MaSV: mssv,
       RoundId: sessionId,
       TrangThai: 'pending'
     });
 
-    // --- BƯỚC 7: Hủy mã OTP (Để không dùng lại được) ---
-    await Otp.markAsUsed(validOtp.id);
+    // BƯỚC 6: Hủy OTP sau khi dùng xong
+    if (validOtp && validOtp.id) {
+        await Otp.markAsUsed(validOtp.id);
+    }
 
-    // Trả về kết quả thành công
     res.status(201).json({
       success: true,
       message: 'Đăng ký thành công!',
@@ -97,15 +99,11 @@ const createRegistration = async (req, res, next) => {
   }
 };
 
-// --- Các hàm Get (Giữ nguyên) ---
 const getRegistrationById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const registration = await Registration.findById(id);
-    
-    if (!registration) {
-      return res.status(404).json({ success: false, message: 'Không tìm thấy bản ghi' });
-    }
+    if (!registration) return res.status(404).json({ success: false, message: 'Không tìm thấy' });
     res.status(200).json({ success: true, data: registration });
   } catch (error) {
     next(error);
@@ -115,12 +113,8 @@ const getRegistrationById = async (req, res, next) => {
 const getRegistrationsByRound = async (req, res, next) => {
   try {
     const { roundId } = req.params;
-    const round = await ExamRound.findById(roundId);
-    if (!round) {
-      return res.status(404).json({ success: false, message: 'Đợt thi không tồn tại' });
-    }
     const registrations = await Registration.findByRoundId(roundId);
-    res.status(200).json({ success: true, data: registrations, count: registrations.length });
+    res.status(200).json({ success: true, data: registrations });
   } catch (error) {
     next(error);
   }
