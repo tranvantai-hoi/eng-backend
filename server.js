@@ -37,6 +37,7 @@ app.use('/api/students', require('./routes/studentRoutes'));
 app.use('/api/exam-rounds', require('./routes/examRoundRoutes'));
 app.use('/api/registrations', require('./routes/registrationRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api', registrationRoutes);
 
 // Error handling middleware
 app.use(require('./middleware/errorHandler'));
