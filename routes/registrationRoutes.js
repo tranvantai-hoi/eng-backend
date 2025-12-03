@@ -2,9 +2,17 @@ const express = require('express');
 const router = express.Router();
 const {
   createRegistration,
+  sendOtp, // Import hàm mới
   getRegistrationById,
   getRegistrationsByRound
 } = require('../controllers/registrationController');
+
+router.post('/', createRegistration); // Đăng ký (kèm OTP)
+router.post('/send-otp', sendOtp);    // Route mới để gửi OTP
+
+// ... các route khác giữ nguyên
+router.get('/:id', getRegistrationById);
+router.get('/by-round/:roundId', getRegistrationsByRound);
 
 // Route đăng ký mới
 router.post('/', createRegistration);
