@@ -9,16 +9,18 @@ const {
 
 // --- ĐỊNH NGHĨA ROUTES ---
 
-// 1. Gửi mã OTP (Bước 1 của quy trình đăng ký)
-router.post('/send-otp', sendOtp);
+// 1. Gửi mã OTP
+// Frontend gọi: /registrations/send-otp
+// Định nghĩa: /registrations/send-otp (Khớp 100%)
+router.post('/registrations/send-otp', sendOtp);
 
-// 2. Tạo đăng ký thi (Bước cuối, cần kèm OTP)
-router.post('/', createRegistration);
+// 2. Tạo đăng ký thi
+// Frontend gọi: /register
+// Định nghĩa: /register (Khớp 100%)
+router.post('/register', createRegistration);
 
-// 3. Lấy chi tiết một bản đăng ký theo ID
-router.get('/:id', getRegistrationById);
-
-// 4. Lấy danh sách đăng ký theo Đợt thi (cho Admin)
-router.get('/by-round/:roundId', getRegistrationsByRound);
+// 3. Các route phụ (Admin hoặc xem chi tiết)
+router.get('/registrations/:id', getRegistrationById);
+router.get('/registrations/by-round/:roundId', getRegistrationsByRound);
 
 module.exports = router;
