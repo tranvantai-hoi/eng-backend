@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 const sendEmail = async (to, subject, htmlContent) => {
   try {
     const mailOptions = {
-      from: `"Hệ Thống Đăng Ký Thi" <${process.env.EMAIL_USER}>`,
+      from: `"Hệ thống đăng ký kiểm tra năng lực Tiếng Anh" <${process.env.EMAIL_USER}>`,
       to: to,
       subject: subject,
       html: htmlContent, // Nội dung HTML đẹp hơn text thường
