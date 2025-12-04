@@ -2,25 +2,27 @@ const express = require('express');
 const router = express.Router();
 const {
   createRegistration,
-  sendOtp, 
+  sendOtp,
+  getRoundActive, // Import hàm mới
   getRegistrationById,
   getRegistrationsByRound
 } = require('../controllers/registrationController');
 
 // --- ĐỊNH NGHĨA ROUTES ---
 
-// 1. Gửi mã OTP
-// Frontend gọi: /registrations/send-otp
-// Định nghĩa: /registrations/send-otp (Khớp 100%)
-router.post('/send-otp', sendOtp);
+// Route lấy đợt thi Active (Frontend đang gọi /examRoundRoutes/getRoundActive)
+// Tùy vào cách bạn mount ở server.js mà URL sẽ khác nhau. 
+// Tôi đặt tên route này là /getRoundActive để dễ map.
+router.get('/getRoundActive', getRoundActive);
 
-// 2. Tạo đăng ký thi
-// Frontend gọi: /register
-// Định nghĩa: /register (Khớp 100%)
-router.post('/register', createRegistration);
+// Route gửi OTP
+router.post('/send-otp', sendOtp); // Lưu ý: Frontend đang gọi /registrations/send-otp hoặc /send-otp tùy api.js
 
-// 3. Các route phụ (Admin hoặc xem chi tiết)
-router.get('/registrations/:id', getRegistrationById);
-router.get('/registrations/by-round/:roundId', getRegistrationsByRound);
+// Route đăng ký
+router.post('/register', createRegistration); // Frontend gọi /register
+
+// Các route khác
+router.get('/:id', getRegistrationById);
+router.get('/by-round/:roundId', getRegistrationsByRound);
 
 module.exports = router;
