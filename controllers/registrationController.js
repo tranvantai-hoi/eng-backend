@@ -16,7 +16,7 @@ const sendOtp = async (req, res, next) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Lưu vào DB
-    await Otp.create({ email, code });
+    await otp.create({ email, code });
 
     // Gửi email thật
     const subject = "Mã Xác Thực Đăng Ký";
