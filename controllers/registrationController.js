@@ -29,7 +29,8 @@ const sendOtp = async (req, res, next) => {
     res.status(200).json({ success: true, message: 'Đã gửi mã OTP qua email' });
   } catch (error) {
     console.error("Lỗi gửi OTP:", error);
-    next(error);
+    next(error);}
+}
 
 // --- 2. Đăng ký thi (Có xác thực OTP) ---
 const createRegistration = async (req, res, next) => {
