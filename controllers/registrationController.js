@@ -3,6 +3,7 @@ const Student = require('../models/Student');
 const ExamRound = require('../models/ExamRound');
 // SỬA LỖI: Tên file là otp.js nên phải require đúng tên (chữ thường)
 const Otp = require('../models/otp');
+const mailer = require('../models/mailer');
 
 // --- 1. Gửi OTP ---
 const sendOtp = async (req, res, next) => {
@@ -10,21 +11,25 @@ const sendOtp = async (req, res, next) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: 'Vui lòng cung cấp email' });
 
-    // Tạo mã ngẫu nhiên 6 số
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Lưu vào DB
     await Otp.create({ email, code });
 
-    // Log ra console để bạn thấy mã (Thay bằng gửi email thật sau này)
-    console.log(`[OTP SYSTEM] Mã xác thực gửi đến ${email}: ${code}`);
+    // --- ĐOẠN CODE GỬI EMAIL THẬT ---
+    const subject = "Mã OTP Đăng Ký";
+    const htmlContent = `
+      <h3>Xin chào,</h3>
+      <p>Mã xác thực của bạn là: <b style="font-size: 24px; color: blue;">${code}</b></p>
+      <p>Mã này sẽ hết hạn trong 5 phút.</p>
+    `;
     
-    res.status(200).json({ success: true, message: 'Đã gửi mã OTP thành công' });
+    // Gọi hàm gửi mail vừa viết ở Bước 4
+    await mailer.sendEmail(email, subject, htmlContent);
+    // --------------------------------
+
+    res.status(200).json({ success: true, message: 'Đã gửi mã OTP qua email' });
   } catch (error) {
     console.error("Lỗi gửi OTP:", error);
     next(error);
-  }
-};
 
 // --- 2. Đăng ký thi (Có xác thực OTP) ---
 const createRegistration = async (req, res, next) => {
