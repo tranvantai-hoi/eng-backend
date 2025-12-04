@@ -1,12 +1,12 @@
 const Registration = require('../models/Registration');
 const Student = require('../models/Student');
 const ExamRound = require('../models/ExamRound');
-// Lưu ý: File OTP của bạn tên là otp.js (chữ thường)
+// Import model OTP
 const Otp = require('../models/otp'); 
-// Import mailer từ models (theo yêu cầu của bạn)
+// Import mailer
 const mailer = require('../models/mailer'); 
 
-// --- 1. Gửi OTP (Đã sửa lỗi thiếu dấu đóng ngoặc) ---
+// --- 1. Gửi OTP ---
 const sendOtp = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -35,14 +35,13 @@ const sendOtp = async (req, res, next) => {
     console.error("Lỗi gửi OTP:", error);
     next(error);
   }
-}; // <--- ĐÃ THÊM DẤU ĐÓNG NGOẶC BỊ THIẾU
+}; // <--- ĐÃ SỬA: Thêm dấu đóng ngoặc này để hết lỗi Syntax Error
 
-// --- [BỔ SUNG] Hàm lấy đợt thi Active (Frontend đang cần cái này) ---
+// --- [QUAN TRỌNG] Hàm lấy đợt thi Active (Bổ sung hàm này để route không bị lỗi) ---
 const getRoundActive = async (req, res, next) => {
   try {
     const activeRound = await ExamRound.findActive();
     if (!activeRound) {
-      // Trả về 200 nhưng data null nếu không có đợt nào
       return res.status(200).json({ success: true, data: null });
     }
     res.status(200).json({ success: true, data: activeRound });
@@ -127,7 +126,7 @@ const getRegistrationsByRound = async (req, res, next) => {
 
 module.exports = {
   sendOtp,
-  getRoundActive, // Export thêm hàm này
+  getRoundActive, // Đừng quên export hàm này
   createRegistration,
   getRegistrationById,
   getRegistrationsByRound
