@@ -1,9 +1,10 @@
 const Registration = require('../models/Registration');
 const Student = require('../models/Student');
 const ExamRound = require('../models/ExamRound');
-// SỬA LỖI: Tên file là otp.js nên phải require đúng tên (chữ thường)
-const Otp = require('../models/otp');
-const mailer = require('../models/mailer');
+// Import model OTP (chữ thường cho khớp file)
+const Otp = require('../models/otp'); 
+// Import mailer từ thư mục models như bạn yêu cầu
+const mailer = require('../models/mailer'); 
 
 // --- 1. Gửi OTP ---
 const sendOtp = async (req, res, next) => {
@@ -11,26 +12,49 @@ const sendOtp = async (req, res, next) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: 'Vui lòng cung cấp email' });
 
+    // Tạo mã 6 số
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Lưu vào DB
     await Otp.create({ email, code });
 
-    // --- ĐOẠN CODE GỬI EMAIL THẬT ---
-    const subject = "Mã OTP Đăng Ký";
+    // --- GỬI EMAIL THẬT ---
+    const subject = "Mã Xác Thực Đăng Ký Kiểm Tra Năng Lực";
     const htmlContent = `
-      <h3>Xin chào,</h3>
-      <p>Mã xác thực của bạn là: <b style="font-size: 24px; color: blue;">${code}</b></p>
-      <p>Mã này sẽ hết hạn trong 5 phút.</p>
+      <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h3 style="color: #0056b3;">Xin chào,</h3>
+        <p>Bạn đang thực hiện đăng ký kiểm tra năng lực tiếng Anh.</p>
+        <p>Mã xác thực (OTP) của bạn là:</p>
+        <h2 style="color: #d9534f; letter-spacing: 2px;">${code}</h2>
+        <p>Mã này sẽ hết hạn trong 5 phút.</p>
+        <hr style="border: none; border-top: 1px solid #eee;" />
+        <small style="color: #666;">Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email.</small>
+      </div>
     `;
     
-    // Gọi hàm gửi mail vừa viết ở Bước 4
+    // Gọi hàm gửi mail
     await mailer.sendEmail(email, subject, htmlContent);
-    // --------------------------------
-
+    
     res.status(200).json({ success: true, message: 'Đã gửi mã OTP qua email' });
   } catch (error) {
     console.error("Lỗi gửi OTP:", error);
-    next(error);}
-}
+    next(error);
+  }
+}; // <--- ĐÃ SỬA: Thêm dấu đóng ngoặc bị thiếu ở bản cũ
+
+// --- [QUAN TRỌNG] Hàm lấy đợt thi Active (Phải có để Bước 3 Frontend chạy) ---
+const getRoundActive = async (req, res, next) => {
+  try {
+    const activeRound = await ExamRound.findActive();
+    if (!activeRound) {
+      return res.status(200).json({ success: true, data: null });
+    }
+    res.status(200).json({ success: true, data: activeRound });
+  } catch (error) {
+    console.error("Lỗi lấy đợt thi active:", error);
+    next(error);
+  }
+};
 
 // --- 2. Đăng ký thi (Có xác thực OTP) ---
 const createRegistration = async (req, res, next) => {
@@ -128,6 +152,7 @@ const getRegistrationsByRound = async (req, res, next) => {
 
 module.exports = {
   sendOtp,
+  getRoundActive, // Export thêm hàm này
   createRegistration,
   getRegistrationById,
   getRegistrationsByRound
