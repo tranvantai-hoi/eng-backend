@@ -121,7 +121,7 @@ const getRegistrationsByRound = async (req, res, next) => {
 };
 
 module.exports = {
-  sendOtp,
+  createOtp,
   createRegistration,
   getRegistrationById,
   getRegistrationsByRound
