@@ -36,7 +36,7 @@ const verifyOtp = async (req, res, next) => {
         success: false, 
         message: 'Mã OTP không chính xác hoặc đã hết hạn' 
       });
-    }
+    
   } catch (error) {
     console.error("Lỗi kiểm tra mã otp:", error);
     next(error);
