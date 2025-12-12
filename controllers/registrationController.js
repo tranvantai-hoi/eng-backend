@@ -3,7 +3,6 @@ const Student = require('../models/Student');
 const ExamRound = require('../models/ExamRound');
 // SỬA LỖI: Tên file là otp.js nên phải require đúng tên (chữ thường)
 const Otp = require('../models/otp');
-const nodemailer = require("nodemailer");
 
 // --- 1. Gửi OTP ---
 const createOtp = async (req, res, next) => {
