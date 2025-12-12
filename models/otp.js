@@ -23,11 +23,10 @@ class Otp {
       ORDER BY created_at DESC 
       LIMIT 1
     `;
-    
-  const cleanEmail = email.trim().toLowerCase();
+  
   const cleanCode = Number(code);  // ép về số
 
-  const result = await pool.query(query, [cleanEmail, cleanCode]);
+  const result = await pool.query(query, [email, cleanCode]);
   return result.rows[0];
   }
 
