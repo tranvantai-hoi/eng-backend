@@ -1,7 +1,6 @@
 const Registration = require('../models/Registration');
 const Student = require('../models/Student');
 const ExamRound = require('../models/ExamRound');
-// SỬA LỖI: Tên file là otp.js nên phải require đúng tên (chữ thường)
 const Otp = require('../models/otp');
 const transporter = require("../config/mail");
 
@@ -18,7 +17,7 @@ const createOtp = async (req, res, next) => {
 
     // Lưu vào DB
     await Otp.create({ email, code });
-
+/*
     // Gửi email OTP
     await transporter.sendMail({
       from: `"ENG Verification" <${process.env.MAIL_USER}>`,
@@ -29,7 +28,7 @@ const createOtp = async (req, res, next) => {
         <p>Mã OTP: <strong style="font-size: 22px">${code}</strong></p>
         <p>Mã sẽ hết hạn sau 5 phút.</p>
       `,
-    });
+    }); */
 
     console.log(`[OTP SYSTEM] Đã gửi OTP tới ${email}: ${code}`);
 
