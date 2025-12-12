@@ -10,8 +10,8 @@ const {
 // --- ĐỊNH NGHĨA ROUTES ---
 
 // 1. Gửi mã OTP
-// Frontend gọi: /otp/send-otp
-// Định nghĩa: /otp/send-otp (Khớp 100%)
+// Frontend gọi: /otp/create-otp
+// Định nghĩa: /otp/create-otp (Khớp 100%)
 router.post('/create-otp', createOtp);
 
 // 2. Tạo đăng ký thi
