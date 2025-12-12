@@ -30,7 +30,7 @@ const createOtp = async (req, res, next) => {
 const verifyOtp = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
-
+    message: 'Mã OTP '+otp+', email: '+email+' không chính xác hoặc đã hết hạn'
     const VLOtp = await Otp.findValidOtp(email, otp);
 
     if (!VLOtp) {
