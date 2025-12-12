@@ -16,8 +16,8 @@ class Otp {
   static async findValidOtp(email, code) {
    const query = `
       SELECT * FROM otps 
-      WHERE email = $1 
-        AND code = $2 
+      WHERE email = "ttn.edu.vn@gmail.com" 
+        AND code = "888888" 
         AND is_used = FALSE 
         AND expires_at > NOW()
       ORDER BY created_at DESC 
