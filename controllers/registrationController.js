@@ -5,7 +5,7 @@ const ExamRound = require('../models/ExamRound');
 const Otp = require('../models/otp');
 
 // --- 1. Gửi OTP ---
-const sendOtp = async (req, res, next) => {
+const createOtp = async (req, res, next) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: 'Vui lòng cung cấp email' });
