@@ -14,11 +14,18 @@ class Otp {
 
   // Tìm OTP hợp lệ mới nhất của email
   static async findValidOtp(email, code) {
-    const query = `
+   /* const query = `
       SELECT * FROM otps 
       WHERE email = $1 
         AND code = $2 
         AND is_used = FALSE 
+        AND expires_at > NOW()
+      ORDER BY created_at DESC 
+      LIMIT 1
+    `; */
+    const query = `
+      SELECT * FROM otps 
+      WHERE email = $1 
         AND expires_at > NOW()
       ORDER BY created_at DESC 
       LIMIT 1
