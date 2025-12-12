@@ -21,7 +21,24 @@ const createOtp = async (req, res, next) => {
     
     res.status(200).json({ success: true, message: 'Đã gửi mã OTP thành công' });
   } catch (error) {
-    console.error("Lỗi gửi OTP:", error);
+    console.error("Lỗi tạo OTP:", error);
+    next(error);
+  }
+};
+
+//kiểm tra mã otp hợp lệ
+const verifyOtp = async (req, res, next) => {
+  Try{
+  const { email, otp } = req.body;
+  const Otp = await Otp.findValidOtp(email, otp);
+    if (!validOtp) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Mã OTP không chính xác hoặc đã hết hạn' 
+      });
+    }
+  } catch (error) {
+    console.error("Lỗi kiểm tra mã otp:", error);
     next(error);
   }
 };
