@@ -28,20 +28,32 @@ const createOtp = async (req, res, next) => {
 
 //kiểm tra mã otp hợp lệ
 const verifyOtp = async (req, res, next) => {
-  Try{
-  const { email, otp } = req.body;
-  const VLOtp = await Otp.findValidOtp(email, otp);
+  try {
+    const { email, otp } = req.body;
+
+    const VLOtp = await Otp.findValidOtp(email, otp);
+
     if (!VLOtp) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Mã OTP không chính xác hoặc đã hết hạn' 
+      return res.status(400).json({
+        success: false,
+        message: 'Mã OTP không chính xác hoặc đã hết hạn'
       });
-    
+    }
+
+    // Xóa OTP sau khi dùng (nếu cần)
+    //await Otp.deleteOtp(email, otp);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Xác thực OTP thành công'
+    });
+
   } catch (error) {
-    console.error("Lỗi kiểm tra mã otp:", error);
+    console.error("Lỗi kiểm tra mã OTP:", error);
     next(error);
   }
 };
+
 
 // --- 2. Đăng ký thi (Có xác thực OTP) ---
 const createRegistration = async (req, res, next) => {
