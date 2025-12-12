@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   createRegistration,
   createOtp, 
+  verifyOtp,
   getRegistrationById,
   getRegistrationsByRound
 } = require('../controllers/registrationController');
@@ -13,6 +14,7 @@ const {
 // Frontend gọi: /otp/create-otp
 // Định nghĩa: /otp/create-otp (Khớp 100%)
 router.post('/create-otp', createOtp);
+router.get('/verify-otp', verifyOtp);
 
 // 2. Tạo đăng ký thi
 // Frontend gọi: /register
