@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   createRegistration,
-  sendOtp, 
+  createOtp, 
   getRegistrationById,
   getRegistrationsByRound
 } = require('../controllers/registrationController');
@@ -10,9 +10,9 @@ const {
 // --- ĐỊNH NGHĨA ROUTES ---
 
 // 1. Gửi mã OTP
-// Frontend gọi: /registrations/send-otp
-// Định nghĩa: /registrations/send-otp (Khớp 100%)
-router.post('/create-otp', sendOtp);
+// Frontend gọi: /otp/send-otp
+// Định nghĩa: /otp/send-otp (Khớp 100%)
+router.post('/create-otp', createOtp);
 
 // 2. Tạo đăng ký thi
 // Frontend gọi: /register
