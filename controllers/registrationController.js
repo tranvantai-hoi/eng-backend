@@ -30,8 +30,8 @@ const createOtp = async (req, res, next) => {
 const verifyOtp = async (req, res, next) => {
   Try{
   const { email, otp } = req.body;
-  const Otp = await Otp.findValidOtp(email, otp);
-    if (!validOtp) {
+  const VLOtp = await Otp.findValidOtp(email, otp);
+    if (!VLOtp) {
       return res.status(400).json({ 
         success: false, 
         message: 'Mã OTP không chính xác hoặc đã hết hạn' 
