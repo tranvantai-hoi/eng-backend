@@ -29,7 +29,16 @@ const createOtp = async (req, res, next) => {
 //kiểm tra mã otp hợp lệ
 const verifyOtp = async (req, res, next) => {
   try {
-    const { email, otp } = req.body;
+    const email = req.query.email;
+    const otp = req.query.otp;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu email hoặc otp"
+      });
+    }
+    
     const VLOtp = await Otp.findValidOtp(email, otp);
 
     if (!VLOtp) {
