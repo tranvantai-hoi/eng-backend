@@ -4,6 +4,7 @@ const ExamRound = require('../models/ExamRound');
 // SỬA LỖI: Tên file là otp.js nên phải require đúng tên (chữ thường)
 const Otp = require('../models/otp');
 
+
 // --- 1. Gửi OTP ---
 const createOtp = async (req, res, next) => {
   try {
