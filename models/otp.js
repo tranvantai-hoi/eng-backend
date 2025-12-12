@@ -16,15 +16,19 @@ class Otp {
   static async findValidOtp(email, code) {
    const query = `
       SELECT * FROM otps 
-      WHERE email = "ttn.edu.vn@gmail.com" 
-        AND code = "888888" 
+      WHERE email = $1
+        AND code = $2
         AND is_used = FALSE 
         AND expires_at > NOW()
       ORDER BY created_at DESC 
       LIMIT 1
     `;
-    const result = await pool.query(query, [email, code]);
-    return result.rows[0];
+    
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanCode = Number(code);  // ép về số
+
+  const result = await pool.query(query, [cleanEmail, cleanCode]);
+  return result.rows[0];
   }
 
   // Đánh dấu OTP đã sử dụng
