@@ -4,7 +4,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendOtpEmail = async (email, code) => {
   return resend.emails.send({
-    from: "ENG System <onboarding@resend.dev>",
+    from: "ENG System <ttn.edu.vn@gmail.com>",
     to: email,
     subject: "Mã OTP xác thực tài khoản",
     html: `
