@@ -47,9 +47,17 @@ const createOtp = async (req, res, next) => {
       to: email,
       subject: "Mã OTP xác thực tài khoản",
       html: `
-        <h2>Mã OTP xác thực của bạn</h2>
-        <p>Mã OTP: <strong style="font-size: 22px">${code}</strong></p>
-        <p>Mã sẽ hết hạn sau 5 phút.</p>
+        <div style="font-family: Arial; padding: 15px; border-radius: 8px; background: #f6f6f6;">
+        <h2 style="color: #333">Mã xác thực OTP</h2>
+        <p>Xin chào,</p>
+        <p>Bạn đang yêu cầu xác thực email. Dưới đây là mã OTP của bạn:</p>
+        <div style="padding: 10px 15px; background: white; border-radius: 6px; border: 1px solid #ddd; width: fit-content;">
+        <span style="font-size: 28px; letter-spacing: 3px; font-weight: bold; color: #0a7cff;">${code}</span>
+        </div>
+        <p>Mã sẽ hết hạn sau <strong>5 phút</strong>.</p>
+        <p>Nếu bạn không yêu cầu xác thực email này, vui lòng bỏ qua email này.</p>
+        <p>Cảm ơn!</p>
+        </div>
       `,
     });
 
