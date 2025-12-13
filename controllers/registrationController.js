@@ -3,11 +3,11 @@ const Student = require('../models/Student');
 const ExamRound = require('../models/ExamRound');
 // SỬA LỖI: Tên file là otp.js nên phải require đúng tên (chữ thường)
 const Otp = require('../models/otp');
-const transporter = require("../config/mail");
+const { sendOtpEmail } = require("../services/emailService");
 
 
 // --- 1. Gửi OTP ---
-/*const createOtp = async (req, res, next) => {
+const createOtp = async (req, res, next) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: 'Vui lòng cung cấp email' });
@@ -18,56 +18,13 @@ const transporter = require("../config/mail");
     // Lưu vào DB
     await Otp.create({ email, code });
 
+    // Gửi email OTP
+    await sendOtpEmail(email, code);
+
     // Log ra console để bạn thấy mã (Thay bằng gửi email thật sau này)
     console.log(`[OTP SYSTEM] Mã xác thực gửi đến ${email}: ${code}`);
     
     res.status(200).json({ success: true, message: 'Đã gửi mã OTP thành công' });
-  } catch (error) {
-    console.error("Lỗi tạo OTP:", error);
-    next(error);
-  }
-};*/
-
-const createOtp = async (req, res, next) => {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ message: 'Vui lòng cung cấp email' });
-    }
-
-    // Tạo mã OTP
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Lưu vào DB
-    await Otp.create({ email, code });
-
-    // Gửi email OTP
-    await transporter.sendMail({
-      from: `"ENG Verification" <${process.env.MAIL_USER}>`,
-      to: email,
-      subject: "Mã OTP xác thực tài khoản",
-      html: `
-        <div style="font-family: Arial; padding: 15px; border-radius: 8px; background: #f6f6f6;">
-        <h2 style="color: #333">Mã xác thực OTP</h2>
-        <p>Xin chào,</p>
-        <p>Bạn đang yêu cầu xác thực email. Dưới đây là mã OTP của bạn:</p>
-        <div style="padding: 10px 15px; background: white; border-radius: 6px; border: 1px solid #ddd; width: fit-content;">
-        <span style="font-size: 28px; letter-spacing: 3px; font-weight: bold; color: #0a7cff;">${code}</span>
-        </div>
-        <p>Mã sẽ hết hạn sau <strong>5 phút</strong>.</p>
-        <p>Nếu bạn không yêu cầu xác thực email này, vui lòng bỏ qua email này.</p>
-        <p>Cảm ơn!</p>
-        </div>
-      `,
-    });
-
-    console.log(`[OTP SYSTEM] Đã gửi OTP tới ${email}: ${code}`);
-
-    res.status(200).json({
-      success: true,
-      message: "Đã gửi mã OTP thành công"
-    });
-
   } catch (error) {
     console.error("Lỗi tạo OTP:", error);
     next(error);
