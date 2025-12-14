@@ -16,14 +16,17 @@ class ExamRound {
   // --- [MỚI] Hàm tìm đợt thi đang Active ---
   static async findActive() {
     try {
-      // Sử dụng ILIKE để tìm 'active' không phân biệt hoa thường
-      // Giữ nguyên dấu ngoặc kép "TrangThai" để đồng bộ với các hàm khác trong file
-      const query = `SELECT * FROM exam_rounds WHERE "TrangThai" ILIKE 'active' LIMIT 1`;
+      // Sửa 1: Bỏ LIMIT 1, thêm ORDER BY để sắp xếp đợt thi nào đến trước thì hiện trước
+      const query = `SELECT * FROM exam_rounds WHERE "TrangThai" ILIKE 'active' ORDER BY "NgayThi" ASC`;
+      
       const result = await pool.query(query);
-      return result.rows[0];
+      
+      // Sửa 2: Trả về toàn bộ danh sách (Array) thay vì chỉ 1 phần tử (Object)
+      return result.rows; 
+      
     } catch (err) {
       console.error("Lỗi tìm đợt thi active:", err);
-      return null;
+      return []; // Trả về mảng rỗng nếu lỗi, thay vì null để tránh crash frontend
     }
   }
 
