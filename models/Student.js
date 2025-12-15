@@ -20,6 +20,20 @@ class Student {
     return result.rows.map(row => this.mapStudentData(row));
   }
 
+  async updateContact(mssv, email, phone) {
+    // Sửa tên bảng 'sinhvien' và các cột 'Email', 'DienThoai' cho đúng DB của bạn
+    const query = `
+        UPDATE students 
+        SET email = $1, dienthoai = $2 
+        WHERE MaSV = $3 
+        RETURNING *
+    `;
+    const values = [email, phone, mssv];
+    
+    // Giả sử bạn đang dùng 'pool' để query
+    const result = await pool.query(query, values);
+    return result.rows[0];
+}
   // --- HÀM CHUẨN HÓA DỮ LIỆU (MAPPING) ---
   // Chuyển đổi từ tên cột trong DB (bên phải) sang tên biến Frontend (bên trái)
   static mapStudentData(dbRecord) {
