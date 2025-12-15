@@ -81,14 +81,14 @@ const createRegistration = async (req, res, next) => {
       });
     }
 
-    // BƯỚC 1: Kiểm tra OTP
+   /* // BƯỚC 1: Kiểm tra OTP
     const validOtp = await Otp.findValidOtp(email, otp);
     if (!validOtp) {
       return res.status(400).json({ 
         success: false, 
         message: 'Mã OTP không chính xác hoặc đã hết hạn' 
       });
-    }
+    } */
 
     // BƯỚC 2: Kiểm tra Sinh viên
     const student = await Student.findByMaSV(mssv);
