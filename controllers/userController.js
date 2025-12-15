@@ -1,4 +1,4 @@
-const User = require('../models/Users');
+const User = require('../models/User');
 const bcrypt = require('bcryptjs'); // Dùng để mã hóa mật khẩu
 
 // Lấy danh sách users hoặc 1 user theo id
