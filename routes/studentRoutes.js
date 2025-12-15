@@ -3,6 +3,7 @@ const router = express.Router();
 const { getStudents } = require('../controllers/studentController');
 
 router.get('/', getStudents);
+router.post('/update-contact', updateContactInfo);
 
 module.exports = router;
 
