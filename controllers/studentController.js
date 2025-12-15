@@ -36,8 +36,8 @@ const updateContactInfo = async (req, res) => {
       // Validation cơ bản
       if (!mssv) return res.status(400).json({ message: 'Thiếu mã sinh viên' });
 
-      // Gọi hàm từ Model vừa viết ở trên
-      const updatedStudent = await studentModel.updateContact(mssv, email, phone);
+      // --- ĐÃ SỬA: Thay studentModel thành Student ---
+      const updatedStudent = await Student.updateContact(mssv, email, phone);
 
       if (!updatedStudent) {
           return res.status(404).json({ message: 'Không tìm thấy sinh viên để cập nhật' });
@@ -54,4 +54,3 @@ module.exports = {
   getStudents,
   updateContactInfo
 };
-
