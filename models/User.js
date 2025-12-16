@@ -44,7 +44,7 @@ class User {
         username = COALESCE($1, username),
         password = COALESCE($2, password),
         role = COALESCE($3, role),
-        fullname = COALESCE($4, fullname)
+        name = COALESCE($4, fullname)
       WHERE id = $5
       RETURNING *
     `;
@@ -75,7 +75,7 @@ class User {
       username: dbRecord.username,
       password: dbRecord.password, 
       role: dbRecord.role,
-      fullname: dbRecord.fullname // Trả về fullname
+      fullname: dbRecord.name // Trả về fullname
     };
   }
 }
