@@ -26,14 +26,13 @@ const login = async (req, res) => {
     }
 
     // 3. Tạo JWT Token
-    // Lưu ý: 'YOUR_SECRET_KEY' nên để trong file .env (VD: process.env.JWT_SECRET)
     const token = jwt.sign(
       { id: user.id, role: user.role, username: user.username },
       process.env.JWT_SECRET || 'secret_key_tam_thoi_123456', 
-      { expiresIn: '1d' } // Token hết hạn sau 1 ngày
+      { expiresIn: '1d' } 
     );
 
-    // 4. Trả về thông tin (bỏ password đi)
+    // 4. Trả về thông tin
     const userData = { ...user };
     delete userData.password;
 
@@ -49,7 +48,7 @@ const login = async (req, res) => {
     return res.status(500).json({ message: 'Lỗi server' });
   }
 };
-// Lấy danh sách users hoặc 1 user theo id
+
 const getUsers = async (req, res) => {
   try {
     const { id } = req.query;
@@ -57,32 +56,19 @@ const getUsers = async (req, res) => {
     if (id) {
       const user = await User.findById(id);
       if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found'
-        });
+        return res.status(404).json({ success: false, message: 'User not found' });
       }
-      // Xóa password trước khi trả về client để bảo mật
       delete user.password; 
-      
-      return res.status(200).json({
-        success: true,
-        data: user
-      });
+      return res.status(200).json({ success: true, data: user });
     }
 
     const users = await User.findAll();
-    // Xóa password trong danh sách
     const safeUsers = users.map(u => {
       const { password, ...rest } = u;
       return rest;
     });
 
-    res.status(200).json({
-      success: true,
-      data: safeUsers,
-      count: safeUsers.length
-    });
+    res.status(200).json({ success: true, data: safeUsers, count: safeUsers.length });
   } catch (error) {
     console.error("Lỗi lấy danh sách user:", error);
     res.status(500).json({ message: 'Lỗi server' });
@@ -92,26 +78,25 @@ const getUsers = async (req, res) => {
 // Tạo user mới
 const createUser = async (req, res) => {
   try {
-    const { username, password, role } = req.body;
+    // [SỬA] Thêm fullname vào destructuring
+    const { username, password, role, fullname } = req.body;
 
-    // Validation cơ bản
     if (!username || !password) {
       return res.status(400).json({ message: 'Thiếu username hoặc password' });
     }
 
-    // Kiểm tra trùng username
     const existingUser = await User.findByUsername(username);
     if (existingUser) {
       return res.status(400).json({ message: 'Username đã tồn tại' });
     }
 
-    // Mã hóa mật khẩu
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = await User.create(username, hashedPassword, role || 'admin');
+    // [SỬA] Truyền fullname vào User.create
+    const newUser = await User.create(username, hashedPassword, role || 'admin', fullname);
     
-    delete newUser.password; // Không trả password về
+    if (newUser) delete newUser.password;
 
     return res.status(201).json({ success: true, data: newUser });
   } catch (error) {
@@ -120,40 +105,30 @@ const createUser = async (req, res) => {
   }
 };
 
-// [MỚI] Hàm xử lý đổi mật khẩu
 const changePassword = async (req, res) => {
   try {
     const { id, oldPassword, newPassword } = req.body;
 
-    // 1. Kiểm tra đầu vào
     if (!id || !oldPassword || !newPassword) {
       return res.status(400).json({ message: 'Vui lòng nhập đủ thông tin' });
     }
 
-    // 2. Tìm user trong DB để lấy mật khẩu hiện tại
-    // Lưu ý: Hàm findById trong User.js của bạn đã trả về cả trường password (đã mã hóa)
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
 
-    // 3. So sánh mật khẩu cũ người dùng nhập vào với mật khẩu trong DB
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Mật khẩu cũ không chính xác' });
     }
 
-    // 4. Mã hóa mật khẩu mới
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // 5. Cập nhật vào Database
     await User.updatePassword(id, hashedPassword);
 
-    return res.status(200).json({ 
-      success: true, 
-      message: 'Đổi mật khẩu thành công' 
-    });
+    return res.status(200).json({ success: true, message: 'Đổi mật khẩu thành công' });
 
   } catch (error) {
     console.error("Lỗi đổi mật khẩu:", error);
@@ -164,7 +139,8 @@ const changePassword = async (req, res) => {
 // Cập nhật User
 const updateUserInfo = async (req, res) => {
   try {
-    const { id, username, password, role } = req.body;
+    // [SỬA] Thêm fullname
+    const { id, username, password, role, fullname } = req.body;
 
     if (!id) return res.status(400).json({ message: 'Thiếu ID user' });
 
@@ -174,8 +150,8 @@ const updateUserInfo = async (req, res) => {
       hashedPassword = await bcrypt.hash(password, salt);
     }
 
-    // Truyền hashedPassword (hoặc null) vào model
-    const updatedUser = await User.update(id, username, hashedPassword, role);
+    // [SỬA] Truyền fullname vào User.update
+    const updatedUser = await User.update(id, username, hashedPassword, role, fullname);
 
     if (!updatedUser) {
       return res.status(404).json({ message: 'Không tìm thấy user để cập nhật' });

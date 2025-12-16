@@ -5,15 +5,13 @@ class User {
   static async findById(id) {
     const query = 'SELECT * FROM users WHERE id = $1';
     const result = await pool.query(query, [id]);
-    
     return result.rows[0] ? this.mapUserData(result.rows[0]) : null;
   }
 
-  // Tìm user theo Username (để kiểm tra đăng nhập hoặc trùng tên)
+  // Tìm user theo Username
   static async findByUsername(username) {
     const query = 'SELECT * FROM users WHERE username = $1';
     const result = await pool.query(query, [username]);
-    
     return result.rows[0] ? this.mapUserData(result.rows[0]) : null;
   }
 
@@ -21,24 +19,42 @@ class User {
   static async findAll() {
     const query = 'SELECT * FROM users ORDER BY id';
     const result = await pool.query(query);
-    
     return result.rows.map(row => this.mapUserData(row));
   }
 
-  // Thêm user mới
-  static async create(username, password, role) {
+  // Thêm user mới (Cập nhật SQL để insert fullname)
+  static async create(username, password, role, fullname) {
     const query = `
-      INSERT INTO users (username, password, role)
-      VALUES ($1, $2, $3)
+      INSERT INTO users (username, password, role, fullname)
+      VALUES ($1, $2, $3, $4)
       RETURNING *
     `;
-    const values = [username, password, role];
+    // Nếu fullname không có, truyền null (hoặc chuỗi rỗng tùy DB)
+    const values = [username, password, role, fullname || null];
     const result = await pool.query(query, values);
     
     return this.mapUserData(result.rows[0]);
   }
 
-  //Update mật khẩu riêng
+  // Cập nhật thông tin user (Cập nhật SQL để update fullname)
+  static async update(id, username, password, role, fullname) {
+    const query = `
+      UPDATE users 
+      SET 
+        username = COALESCE($1, username),
+        password = COALESCE($2, password),
+        role = COALESCE($3, role),
+        fullname = COALESCE($4, fullname)
+      WHERE id = $5
+      RETURNING *
+    `;
+    const values = [username, password, role, fullname, id];
+    const result = await pool.query(query, values);
+    
+    return result.rows[0] ? this.mapUserData(result.rows[0]) : null;
+  }
+
+  // Đổi mật khẩu
   static async updatePassword(id, hashedPassword) {
     const query = `
       UPDATE users 
@@ -47,38 +63,19 @@ class User {
       RETURNING *
     `;
     const result = await pool.query(query, [hashedPassword, id]);
-    
-    return result.rows[0] ? this.mapUserData(result.rows[0]) : null;
-  }
-  
-  // Cập nhật thông tin user
-  // Dùng COALESCE để nếu truyền null thì giữ nguyên giá trị cũ
-  static async update(id, username, password, role) {
-    const query = `
-      UPDATE users 
-      SET 
-        username = COALESCE($1, username),
-        password = COALESCE($2, password),
-        role = COALESCE($3, role)
-      WHERE id = $4
-      RETURNING *
-    `;
-    const values = [username, password, role, id];
-    const result = await pool.query(query, values);
-    
     return result.rows[0] ? this.mapUserData(result.rows[0]) : null;
   }
 
-  // Chuẩn hóa dữ liệu trả về (bỏ password đi nếu không cần thiết, nhưng ở đây tôi giữ raw để controller xử lý)
+  // Chuẩn hóa dữ liệu trả về
   static mapUserData(dbRecord) {
     if (!dbRecord) return null;
 
     return {
       id: dbRecord.id,
       username: dbRecord.username,
-      password: dbRecord.password, // Thường sẽ ẩn cái này khi trả về client
-      fullname: dbRecord.name, // Thường sẽ ẩn cái này khi trả về client
-      role: dbRecord.role
+      password: dbRecord.password, 
+      role: dbRecord.role,
+      fullname: dbRecord.fullname // Trả về fullname
     };
   }
 }
