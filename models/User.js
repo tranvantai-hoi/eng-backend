@@ -64,6 +64,7 @@ class User {
       id: dbRecord.id,
       username: dbRecord.username,
       password: dbRecord.password, // Thường sẽ ẩn cái này khi trả về client
+      fullname: dbRecord.name, // Thường sẽ ẩn cái này khi trả về client
       role: dbRecord.role
     };
   }
