@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getUsers, createUser, updateUserInfo } = require('../controllers/userController');
+const { getUsers, createUser, updateUserInfo, login } = require('../controllers/userController');
 
 // GET /api/users (Lấy tất cả hoặc ?id=...)
 router.get('/', getUsers);
