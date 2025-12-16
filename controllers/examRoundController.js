@@ -36,7 +36,7 @@ const getRounds = async (req, res, next) => {
 const createRound = async (req, res, next) => {
   try {
     // [SỬA] Thêm LePhi vào destructuring
-    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, LePhi, TrangThai } = req.body;
+    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, lephi, TrangThai } = req.body;
 
     if (!TenDot || !NgayThi || !GioThi || !DiaDiem || !SoLuongToiDa) {
       return res.status(400).json({
@@ -51,7 +51,7 @@ const createRound = async (req, res, next) => {
       GioThi,
       DiaDiem,
       SoLuongToiDa,
-      LePhi, // Truyền LePhi xuống Model
+      lephi, // Truyền LePhi xuống Model
       TrangThai
     });
 
