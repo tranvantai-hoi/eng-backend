@@ -29,7 +29,7 @@ class ExamRound {
     // [SỬA] Thêm LePhi vào hàm create
     const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, LePhi, TrangThai } = data;
     const query = `
-      INSERT INTO exam_rounds ("TenDot", "NgayThi", "GioThi", "DiaDiem", "SoLuongToiDa", "LePhi", "TrangThai")
+      INSERT INTO exam_rounds ("TenDot", "NgayThi", "GioThi", "DiaDiem", "SoLuongToiDa", "lephi", "TrangThai")
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
@@ -49,7 +49,7 @@ class ExamRound {
           "GioThi" = COALESCE($3, "GioThi"),
           "DiaDiem" = COALESCE($4, "DiaDiem"),
           "SoLuongToiDa" = COALESCE($5, "SoLuongToiDa"),
-          "LePhi" = COALESCE($6, "LePhi"),
+          "LePhi" = COALESCE($6, "lephi"),
           "TrangThai" = COALESCE($7, "TrangThai"),
           "UpdatedAt" = CURRENT_TIMESTAMP
       WHERE id = $8
