@@ -41,12 +41,12 @@ const getRounds = async (req, res, next) => {
 
 const createRound = async (req, res, next) => {
   try {
-    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai } = req.body;
+    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai,LePhi } = req.body;
 
-    if (!TenDot || !NgayThi || !GioThi || !DiaDiem || !SoLuongToiDa) {
+    if (!TenDot || !NgayThi || !GioThi || !DiaDiem || !SoLuongToiDa || !LePhi) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa'
+        message: 'Missing required fields: Đợt, Ngày thi, Giờ thi, Địa điểm, SL Tối đa, Lệ phí'
       });
     }
 
@@ -56,6 +56,7 @@ const createRound = async (req, res, next) => {
       GioThi,
       DiaDiem,
       SoLuongToiDa,
+      LePhi,
       TrangThai
     });
 
