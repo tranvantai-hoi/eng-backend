@@ -25,7 +25,7 @@ class User {
   // Thêm user mới (Cập nhật SQL để insert fullname)
   static async create(username, password, role, fullname) {
     const query = `
-      INSERT INTO users (username, password, role, fullname)
+      INSERT INTO users (username, password, role, name)
       VALUES ($1, $2, $3, $4)
       RETURNING *
     `;
@@ -44,7 +44,7 @@ class User {
         username = COALESCE($1, username),
         password = COALESCE($2, password),
         role = COALESCE($3, role),
-        fullname = COALESCE($4, fullname)
+        name = COALESCE($4, fullname)
       WHERE id = $5
       RETURNING *
     `;
