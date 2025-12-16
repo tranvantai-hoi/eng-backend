@@ -1,6 +1,54 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs'); // Dùng để mã hóa mật khẩu
+const jwt = require('jsonwebtoken');
 
+
+const login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // 1. Tìm user theo username
+    const user = await User.findByUsername(username);
+    if (!user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Tài khoản hoặc mật khẩu không chính xác' 
+      });
+    }
+
+    // 2. So sánh mật khẩu (password nhập vào vs password đã mã hóa trong DB)
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Tài khoản hoặc mật khẩu không chính xác' 
+      });
+    }
+
+    // 3. Tạo JWT Token
+    // Lưu ý: 'YOUR_SECRET_KEY' nên để trong file .env (VD: process.env.JWT_SECRET)
+    const token = jwt.sign(
+      { id: user.id, role: user.role, username: user.username },
+      process.env.JWT_SECRET || 'secret_key_tam_thoi_123456', 
+      { expiresIn: '1d' } // Token hết hạn sau 1 ngày
+    );
+
+    // 4. Trả về thông tin (bỏ password đi)
+    const userData = { ...user };
+    delete userData.password;
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đăng nhập thành công',
+      token: token,
+      user: userData
+    });
+
+  } catch (error) {
+    console.error("Lỗi đăng nhập:", error);
+    return res.status(500).json({ message: 'Lỗi server' });
+  }
+};
 // Lấy danh sách users hoặc 1 user theo id
 const getUsers = async (req, res) => {
   try {
@@ -104,5 +152,6 @@ const updateUserInfo = async (req, res) => {
 module.exports = {
   getUsers,
   createUser,
-  updateUserInfo
+  updateUserInfo,
+  login
 };
