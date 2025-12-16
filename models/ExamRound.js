@@ -31,19 +31,19 @@ class ExamRound {
   }
 
   static async create(data) {
-    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai,lephi } = data;
+    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai,LePhi } = data;
     const query = `
-      INSERT INTO exam_rounds ("TenDot", "NgayThi", "GioThi", "DiaDiem", "SoLuongToiDa", "TrangThai","lephi")
+      INSERT INTO exam_rounds ("TenDot", "NgayThi", "GioThi", "DiaDiem", "SoLuongToiDa", "TrangThai","LePhi")
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
-    const values = [TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai || 'active', lephi];
+    const values = [TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai || 'active', LePhi];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
 
   static async update(id, data) {
-    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai, lephi } = data;
+    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai, LePhi } = data;
     const query = `
       UPDATE exam_rounds
       SET "TenDot" = COALESCE($1, "TenDot"),
@@ -53,11 +53,11 @@ class ExamRound {
           "SoLuongToiDa" = COALESCE($5, "SoLuongToiDa"),
           "TrangThai" = COALESCE($6, "TrangThai"),
           "UpdatedAt" = CURRENT_TIMESTAMP
-          "lephi" = COALESCE($7, "lephi"),
+          "lephi" = COALESCE($7, "LePhi"),
       WHERE id = $8
       RETURNING *
     `;
-    const values = [TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai, lephi, id];
+    const values = [TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai, LePhi, id];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
