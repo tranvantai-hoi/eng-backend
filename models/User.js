@@ -38,6 +38,19 @@ class User {
     return this.mapUserData(result.rows[0]);
   }
 
+  //Update mật khẩu riêng
+  static async updatePassword(id, hashedPassword) {
+    const query = `
+      UPDATE users 
+      SET password = $1 
+      WHERE id = $2 
+      RETURNING *
+    `;
+    const result = await pool.query(query, [hashedPassword, id]);
+    
+    return result.rows[0] ? this.mapUserData(result.rows[0]) : null;
+  }
+  
   // Cập nhật thông tin user
   // Dùng COALESCE để nếu truyền null thì giữ nguyên giá trị cũ
   static async update(id, username, password, role) {

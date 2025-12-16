@@ -120,6 +120,47 @@ const createUser = async (req, res) => {
   }
 };
 
+// [MỚI] Hàm xử lý đổi mật khẩu
+const changePassword = async (req, res) => {
+  try {
+    const { id, oldPassword, newPassword } = req.body;
+
+    // 1. Kiểm tra đầu vào
+    if (!id || !oldPassword || !newPassword) {
+      return res.status(400).json({ message: 'Vui lòng nhập đủ thông tin' });
+    }
+
+    // 2. Tìm user trong DB để lấy mật khẩu hiện tại
+    // Lưu ý: Hàm findById trong User.js của bạn đã trả về cả trường password (đã mã hóa)
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
+    }
+
+    // 3. So sánh mật khẩu cũ người dùng nhập vào với mật khẩu trong DB
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Mật khẩu cũ không chính xác' });
+    }
+
+    // 4. Mã hóa mật khẩu mới
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // 5. Cập nhật vào Database
+    await User.updatePassword(id, hashedPassword);
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Đổi mật khẩu thành công' 
+    });
+
+  } catch (error) {
+    console.error("Lỗi đổi mật khẩu:", error);
+    return res.status(500).json({ message: 'Lỗi server' });
+  }
+};
+
 // Cập nhật User
 const updateUserInfo = async (req, res) => {
   try {
@@ -152,6 +193,7 @@ const updateUserInfo = async (req, res) => {
 module.exports = {
   getUsers,
   createUser,
+  changePassword,
   updateUserInfo,
-  login
+  login,
 };
