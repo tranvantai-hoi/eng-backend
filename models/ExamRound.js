@@ -2,6 +2,7 @@ const pool = require('../config/db');
 
 class ExamRound {
   static async findAll() {
+    // [SỬA] Đảm bảo select đủ cột, bao gồm LePhi
     const query = 'SELECT * FROM exam_rounds ORDER BY "NgayThi" DESC';
     const result = await pool.query(query);
     return result.rows;
@@ -13,37 +14,34 @@ class ExamRound {
     return result.rows[0];
   }
 
-  // --- [MỚI] Hàm tìm đợt thi đang Active ---
   static async findActive() {
     try {
-      // Sửa 1: Bỏ LIMIT 1, thêm ORDER BY để sắp xếp đợt thi nào đến trước thì hiện trước
       const query = `SELECT * FROM exam_rounds WHERE "TrangThai" ILIKE 'active' ORDER BY "NgayThi" ASC`;
-      
       const result = await pool.query(query);
-      
-      // Sửa 2: Trả về toàn bộ danh sách (Array) thay vì chỉ 1 phần tử (Object)
       return result.rows; 
-      
     } catch (err) {
       console.error("Lỗi tìm đợt thi active:", err);
-      return []; // Trả về mảng rỗng nếu lỗi, thay vì null để tránh crash frontend
+      return []; 
     }
   }
 
   static async create(data) {
-    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai,LePhi } = data;
+    // [SỬA] Thêm LePhi vào hàm create
+    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, LePhi, TrangThai } = data;
     const query = `
-      INSERT INTO exam_rounds ("TenDot", "NgayThi", "GioThi", "DiaDiem", "SoLuongToiDa", "TrangThai","LePhi")
+      INSERT INTO exam_rounds ("TenDot", "NgayThi", "GioThi", "DiaDiem", "SoLuongToiDa", "LePhi", "TrangThai")
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
-    const values = [TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai || 'active', LePhi];
+    // Thêm LePhi vào mảng values (mặc định 0 nếu không có)
+    const values = [TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, LePhi || 0, TrangThai || 'active'];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
 
   static async update(id, data) {
-    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai, LePhi } = data;
+    // [SỬA] Thêm LePhi vào hàm update
+    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, LePhi, TrangThai } = data;
     const query = `
       UPDATE exam_rounds
       SET "TenDot" = COALESCE($1, "TenDot"),
@@ -51,13 +49,14 @@ class ExamRound {
           "GioThi" = COALESCE($3, "GioThi"),
           "DiaDiem" = COALESCE($4, "DiaDiem"),
           "SoLuongToiDa" = COALESCE($5, "SoLuongToiDa"),
-          "TrangThai" = COALESCE($6, "TrangThai"),
+          "LePhi" = COALESCE($6, "LePhi"),
+          "TrangThai" = COALESCE($7, "TrangThai"),
           "UpdatedAt" = CURRENT_TIMESTAMP
-          "lephi" = COALESCE($7, "LePhi"),
       WHERE id = $8
       RETURNING *
     `;
-    const values = [TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai, LePhi, id];
+    // Thêm LePhi vào mảng values
+    const values = [TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, LePhi, TrangThai, id];
     const result = await pool.query(query, values);
     return result.rows[0];
   }

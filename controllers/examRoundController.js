@@ -2,23 +2,17 @@ const ExamRound = require('../models/ExamRound');
 
 const getRoundActive = async (req, res, next) => {
   try {
-    // Gọi hàm tìm kiếm từ Model
     const activeRound = await ExamRound.findActive();
-
-    // Kiểm tra nếu không tìm thấy đợt nào
     if (!activeRound) {
       return res.status(404).json({
         success: false,
         message: 'Hiện tại không có đợt kiểm tra nào đang mở.'
       });
     }
-
-    // Trả về kết quả (Lưu ý: activeRound là Object, không phải Array)
     res.status(200).json({
       success: true,
       data: activeRound
     });
-
   } catch (error) {
     console.error("Lỗi Controller getRoundActive:", error);
     next(error);
@@ -41,12 +35,13 @@ const getRounds = async (req, res, next) => {
 
 const createRound = async (req, res, next) => {
   try {
-    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, TrangThai,LePhi } = req.body;
+    // [SỬA] Thêm LePhi vào destructuring
+    const { TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa, LePhi, TrangThai } = req.body;
 
-    if (!TenDot || !NgayThi || !GioThi || !DiaDiem || !SoLuongToiDa || !LePhi) {
+    if (!TenDot || !NgayThi || !GioThi || !DiaDiem || !SoLuongToiDa) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: Đợt, Ngày thi, Giờ thi, Địa điểm, SL Tối đa, Lệ phí'
+        message: 'Missing required fields: TenDot, NgayThi, GioThi, DiaDiem, SoLuongToiDa'
       });
     }
 
@@ -56,7 +51,7 @@ const createRound = async (req, res, next) => {
       GioThi,
       DiaDiem,
       SoLuongToiDa,
-      LePhi,
+      LePhi, // Truyền LePhi xuống Model
       TrangThai
     });
 
@@ -72,7 +67,7 @@ const createRound = async (req, res, next) => {
 const updateRound = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = req.body; // updateData đã chứa LePhi nếu client gửi lên
 
     const round = await ExamRound.findById(id);
     if (!round) {
@@ -121,4 +116,3 @@ module.exports = {
   updateRound,
   deleteRound
 };
-
