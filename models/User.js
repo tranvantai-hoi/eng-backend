@@ -44,7 +44,7 @@ class User {
         username = COALESCE($1, username),
         password = COALESCE($2, password),
         role = COALESCE($3, role),
-        name = COALESCE($4, fullname)
+        fullname = COALESCE($4, fullname)
       WHERE id = $5
       RETURNING *
     `;
