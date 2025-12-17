@@ -187,5 +187,6 @@ module.exports = {
   getRegistrationById,
   getRegistrationsByRound,
   updateStatus,
+  changeRound,
   deleteRegistration
 };
