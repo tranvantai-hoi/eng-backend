@@ -49,7 +49,7 @@ class ExamRound {
           "GioThi" = COALESCE($3, "GioThi"),
           "DiaDiem" = COALESCE($4, "DiaDiem"),
           "SoLuongToiDa" = COALESCE($5, "SoLuongToiDa"),
-          "lephi" = COALESCE($6, "LePhi"),
+          "lephi" = COALESCE($6, "lephi"),
           "TrangThai" = COALESCE($7, "TrangThai"),
           "UpdatedAt" = CURRENT_TIMESTAMP
       WHERE id = $8
