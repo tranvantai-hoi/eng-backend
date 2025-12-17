@@ -143,8 +143,8 @@ const createRegistration = async (req, res, next) => {
 
 const getRegistrationById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const registration = await Registration.findById(id);
+    const { MaSV, id } = req.params;
+    const registration = await Registration.findById(MaSV,id);
     if (!registration) return res.status(404).json({ success: false, message: 'Không tìm thấy' });
     res.status(200).json({ success: true, data: registration });
   } catch (error) {

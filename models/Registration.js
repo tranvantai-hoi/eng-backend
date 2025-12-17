@@ -1,16 +1,23 @@
 const pool = require('../config/db');
 
 class Registration {
-  static async findById(id) {
-    const query = 'SELECT * FROM registrations WHERE id = $1';
-    const result = await pool.query(query, [id]);
+  static async findById(MaSV, roundId) {
+    const query = `
+      SELECT r.*, s."HoTen",s."NgaySinh", s."GioiTinh", s."Lop", s."MaSV", er."TenDot", er."NgayThi", er."GioThi", er."DiaDiem"
+      FROM registrations r
+      JOIN students s ON r."MaSV" = s."MaSV"
+      JOIN exam_rounds er ON r."RoundId" = er.id
+      WHERE r."MaSV" = $1 AND er.id = $2
+      ORDER BY r."CreatedAt" DESC
+    `;
+    const result = await pool.query(query, [MaSV, roundId]);
     return result.rows[0];
   }
 
   static async findByRoundId(roundId) {
     // Join bảng để lấy thông tin chi tiết
     const query = `
-      SELECT r.*, s."HoTen", s."Lop", s."MaSV", er."TenDot", er."NgayThi", er."GioThi"
+      SELECT r.*, s."HoTen",s."NgaySinh", s."GioiTinh", s."Lop", s."MaSV", er."TenDot", er."NgayThi", er."GioThi", er."DiaDiem"
       FROM registrations r
       JOIN students s ON r."MaSV" = s."MaSV"
       JOIN exam_rounds er ON r."RoundId" = er.id
