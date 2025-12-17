@@ -30,19 +30,22 @@ class Student {
   // Hàm cập nhật đầy đủ thông tin (cho chức năng Edit)
   static async updateFull(mssv, data) {
     const { fullName, dob, gender, faculty, email, phone } = data;
+    
+    // Chuẩn hóa ngày sinh trước khi update
+    const formattedDob = this.normalizeDate(dob);
+
     const query = `
         UPDATE students 
         SET "HoTen" = $1, "NgaySinh" = $2, "GioiTinh" = $3, "Lop" = $4, email = $5, dienthoai = $6 
         WHERE "MaSV" = $7 
         RETURNING *
     `;
-    const values = [fullName, dob, gender, faculty, email, phone, mssv];
+    const values = [fullName, formattedDob, gender, faculty, email, phone, mssv];
     const result = await pool.query(query, values);
     return result.rows[0] ? this.mapStudentData(result.rows[0]) : null;
   }
 
   // --- [ĐÃ SỬA] Hàm nhập danh sách sinh viên từ Excel (Bulk Import) ---
-  // Sửa đổi: Cho phép email và phone có giá trị null nếu thiếu trong file Excel
   static async bulkCreate(studentList) {
     const client = await pool.connect(); // Sử dụng client để quản lý Transaction
     
@@ -59,11 +62,10 @@ class Student {
           DO NOTHING
         `;
         
-        // 1. Xử lý ngày sinh: Đảm bảo hợp lệ hoặc null
-        const dob = s.dob ? new Date(s.dob) : null;
+        // 1. Xử lý ngày sinh: Chuyển đổi từ dd/MM/yyyy sang YYYY-MM-DD
+        const dob = this.normalizeDate(s.dob);
 
         // 2. Xử lý email và phone: Nếu undefined hoặc rỗng thì gán null
-        // Điều này giúp tránh lỗi insert nếu cột cho phép NULL
         const email = s.email && s.email.trim() !== '' ? s.email.trim() : null;
         const phone = s.phone && String(s.phone).trim() !== '' ? String(s.phone).trim() : null;
         
@@ -73,8 +75,8 @@ class Student {
           dob, 
           s.gender, 
           s.faculty, 
-          email,  // Sử dụng biến đã xử lý
-          phone   // Sử dụng biến đã xử lý
+          email,  
+          phone   
         ];
 
         const res = await client.query(query, values);
@@ -94,6 +96,24 @@ class Student {
     } finally {
       client.release(); // Trả kết nối về pool
     }
+  }
+
+  // --- [HÀM MỚI] Helper để chuyển đổi ngày tháng ---
+  static normalizeDate(dateInput) {
+    if (!dateInput) return null;
+
+    // Nếu là chuỗi có dạng dd/MM/yyyy (ví dụ: 15/08/2003)
+    if (typeof dateInput === 'string' && dateInput.includes('/')) {
+        const parts = dateInput.split('/');
+        // Nếu cắt ra đúng 3 phần ngày, tháng, năm
+        if (parts.length === 3) {
+            // Đảo lại thành YYYY-MM-DD (2003-08-15)
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+    }
+
+    // Trường hợp đã là YYYY-MM-DD hoặc Date Object thì giữ nguyên
+    return dateInput;
   }
 
   // Hàm xóa sinh viên theo id
