@@ -3,7 +3,7 @@ const Student = require('../models/Student');
 const ExamRound = require('../models/ExamRound');
 // [SỬA] Đảm bảo tên file khớp chính xác (Thường là Otp.js hoặc otp.js)
 // Nếu file model của bạn viết hoa là Otp.js, hãy sửa dòng dưới thành '../models/Otp'
-const Otp = require('../models/Otp'); 
+const Otp = require('../models/otp'); 
 const { sendOtpEmail } = require("../services/emailService");
 
 // --- 1. Gửi OTP ---
