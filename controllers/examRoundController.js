@@ -69,6 +69,10 @@ const updateRound = async (req, res, next) => {
     const { id } = req.params;
     const updateData = req.body; // updateData đã chứa LePhi nếu client gửi lên
 
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Thiếu ID đợt thi' });
+   }
+    
     const round = await ExamRound.findById(id);
     if (!round) {
       return res.status(404).json({
