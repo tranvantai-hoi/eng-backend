@@ -54,6 +54,17 @@ class User {
     return result.rows[0] ? this.mapUserData(result.rows[0]) : null;
   }
 
+static async delete(id) {
+  const query=`
+    DELETE FROM users
+    WHERE id = $1
+    RETURNING *
+    `;
+  const result = await pool.query(query, [id]);
+  return result.rows[0]
+}
+
+
   // Đổi mật khẩu
   static async updatePassword(id, hashedPassword) {
     const query = `
