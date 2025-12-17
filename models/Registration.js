@@ -66,14 +66,14 @@ class Registration {
     return result.rows[0];
   }
 
-  static async changeRound(id) {
+  static async changeRound(mssv, originalRoundId, roundId) {
     const query = `
       UPDATE registrations
-      SET "RoundId" = $1
-      WHERE "MaSV" = $2 AND "id" = $3
+      SET "RoundId" = $3
+      WHERE "MaSV" = $1 AND "RoundId" = $2
       RETURNING *
     `;
-    const result = await pool.query(query, [RoundId, MaSV, id]);
+    const result = await pool.query(query, [mssv, originalRoundId, roundId]);
     return result.rows[0];
   }
 
