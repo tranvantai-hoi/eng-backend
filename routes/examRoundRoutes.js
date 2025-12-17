@@ -10,7 +10,7 @@ const {
 router.get('/active', getRoundActive);
 router.get('/', getRounds);
 router.post('/', createRound);
-router.post('/:id', updateRound);
+router.put('/:id', updateRound);
 router.delete('/:id', deleteRound);
 
 module.exports = router;
