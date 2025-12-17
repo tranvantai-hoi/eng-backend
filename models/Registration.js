@@ -42,6 +42,12 @@ class Registration {
     const result = await pool.query(query, [MaSV, RoundId]);
     return result.rows[0];
   }
+
+  static async delete(MaSV, RoundId) {
+    const query = 'DELETE FROM registrations WHERE "MaSV" = $1 AND "RoundId" = $2'
+    const result = await pool.query(query, [MaSV, RoundId]);
+    return result.rows[0];
+  }
 }
 
 module.exports = Registration;
