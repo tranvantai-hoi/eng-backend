@@ -1,3 +1,4 @@
+const { request } = require('express');
 const Student = require('../models/Student');
 
 const getStudents = async (req, res, next) => {
@@ -87,9 +88,31 @@ try {
 }
 };
 
+const deleteStudents = async (req,res) =>{
+  try{
+    const {mssv} = req.body
+    const sinhvien = await student.findByMaSV(mssv);
+    if (!sinhvien) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy sinh viên cần xóa'
+      });
+    }
+
+    await student.deleteStudents(mssv);
+    res.status(200).json({
+      success: true,
+      message: 'Đã xóa sinh viên thành công'
+    });
+  } catch (error) {
+    next(error);
+}
+};
+
 module.exports = {
   getStudents,
   updateContactInfo,
   updateStudentFullInfo,
-  importStudents
+  importStudents,
+  deleteStudents
 };

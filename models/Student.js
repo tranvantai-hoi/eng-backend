@@ -90,7 +90,13 @@ class Student {
       client.release(); // Trả kết nối về pool
     }
   }
-
+// Hàm xóa sinh viên theo id
+  static async deleteStudents(mssv)
+  {
+    const query = 'DELETE FROM student WHERE "MaSV" = $1 RETURNING *';
+    const result = await pool.query(query, [mssv]);
+    return result.rows[0];
+  }
   // Hàm chuẩn hóa dữ liệu
   static mapStudentData(dbRecord) {
     if (!dbRecord) return null;
