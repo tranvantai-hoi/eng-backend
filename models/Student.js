@@ -42,7 +42,7 @@ class Student {
   }
 
   // --- [ĐÃ SỬA] Hàm nhập danh sách sinh viên từ Excel (Bulk Import) ---
-  // Logic: Nếu MSSV đã tồn tại -> BỎ QUA (DO NOTHING). Nếu chưa có -> THÊM MỚI.
+  // Sửa đổi: Cho phép email và phone có giá trị null nếu thiếu trong file Excel
   static async bulkCreate(studentList) {
     const client = await pool.connect(); // Sử dụng client để quản lý Transaction
     
@@ -59,8 +59,13 @@ class Student {
           DO NOTHING
         `;
         
-        // Đảm bảo dữ liệu ngày tháng hợp lệ hoặc null
+        // 1. Xử lý ngày sinh: Đảm bảo hợp lệ hoặc null
         const dob = s.dob ? new Date(s.dob) : null;
+
+        // 2. Xử lý email và phone: Nếu undefined hoặc rỗng thì gán null
+        // Điều này giúp tránh lỗi insert nếu cột cho phép NULL
+        const email = s.email && s.email.trim() !== '' ? s.email.trim() : null;
+        const phone = s.phone && String(s.phone).trim() !== '' ? String(s.phone).trim() : null;
         
         const values = [
           s.mssv, 
@@ -68,8 +73,8 @@ class Student {
           dob, 
           s.gender, 
           s.faculty, 
-          s.email, 
-          s.phone
+          email,  // Sử dụng biến đã xử lý
+          phone   // Sử dụng biến đã xử lý
         ];
 
         const res = await client.query(query, values);
@@ -90,13 +95,15 @@ class Student {
       client.release(); // Trả kết nối về pool
     }
   }
-// Hàm xóa sinh viên theo id
+
+  // Hàm xóa sinh viên theo id
   static async delete(mssv)
   {
     const query = 'DELETE FROM students WHERE "MaSV" = $1 RETURNING *';
     const result = await pool.query(query, [mssv]);
     return result.rows[0];
   }
+
   // Hàm chuẩn hóa dữ liệu
   static mapStudentData(dbRecord) {
     if (!dbRecord) return null;
