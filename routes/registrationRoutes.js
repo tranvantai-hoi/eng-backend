@@ -22,4 +22,7 @@ router.get('/by-id', getRegistrationById);
 // Frontend gọi: /api/registrations/by-round/1
 router.get('/by-round/:roundId', getRegistrationsByRound);
 
+router.put('/status', updateStatus);   // PUT /api/registrations/status
+router.delete('/', deleteRegistration);
+
 module.exports = router;

@@ -130,6 +130,33 @@ const getRegistrationById = async (req, res, next) => {
   }
 };
 
+
+// Cập nhật trạng thái (Duyệt/Đóng phí)
+const updateStatus = async (req, res, next) => {
+  try {
+      const { mssv, roundId, status } = req.body;
+      if (!mssv || !roundId || !status) return res.status(400).json({ message: "Thiếu thông tin" });
+      
+      const updated = await Registration.updateStatus(mssv, roundId, status);
+      res.status(200).json({ success: true, data: updated, message: "Cập nhật thành công" });
+  } catch (error) {
+      next(error);
+  }
+};
+
+// Xóa đăng ký
+const deleteRegistration = async (req, res, next) => {
+  try {
+      const { mssv, roundId } = req.query; // Nhận từ query string
+      if (!mssv || !roundId) return res.status(400).json({ message: "Thiếu mssv hoặc roundId" });
+
+      await Registration.delete(mssv, roundId);
+      res.status(200).json({ success: true, message: "Xóa đăng ký thành công" });
+  } catch (error) {
+      next(error);
+  }
+};
+
 const getRegistrationsByRound = async (req, res, next) => {
   try {
     const { roundId } = req.params;
@@ -145,5 +172,7 @@ module.exports = {
   verifyOtp,
   createRegistration,
   getRegistrationById,
-  getRegistrationsByRound
+  getRegistrationsByRound,
+  updateStatus,
+  deleteRegistration
 };

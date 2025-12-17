@@ -54,6 +54,18 @@ class Registration {
     return result.rows[0];
   }
 
+  // [MỚI] Hàm cập nhật trạng thái
+  static async updateStatus(MaSV, RoundId, TrangThai) {
+    const query = `
+      UPDATE registrations
+      SET "TrangThai" = $1
+      WHERE "MaSV" = $2 AND "RoundId" = $3
+      RETURNING *
+    `;
+    const result = await pool.query(query, [TrangThai, MaSV, RoundId]);
+    return result.rows[0];
+  }
+
   static async delete(MaSV, RoundId) {
     const query = 'DELETE FROM registrations WHERE "MaSV" = $1 AND "RoundId" = $2 RETURNING *';
     const result = await pool.query(query, [MaSV, RoundId]);
