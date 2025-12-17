@@ -166,10 +166,38 @@ const updateUserInfo = async (req, res) => {
   }
 };
 
+ // Xóa user
+ const deleteUsers = async (req, res) => {
+  try {
+    const { id } = req.query;
+
+    if (id) {
+      const user = await User.findById(id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
+      }
+      delete user.password; 
+      return res.status(200).json({ success: true, data: user });
+    }
+
+    const users = await User.delete(id);
+    const safeUsers = users.map(u => {
+      const { password, ...rest } = u;
+      return rest;
+    });
+
+    res.status(200).json({ success: true, data: safeUsers, count: safeUsers.length });
+  } catch (error) {
+    console.error("Lỗi lấy danh sách user:", error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+};
+
 module.exports = {
   getUsers,
   createUser,
   changePassword,
   updateUserInfo,
   login,
+  deleteUsers
 };
