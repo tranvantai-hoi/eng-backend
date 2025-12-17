@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getUsers, createUser, updateUserInfo, login, changePassword } = require('../controllers/userController');
+const { getUsers, createUser, updateUserInfo, login, changePassword, deleteUsers } = require('../controllers/userController');
 
 // GET /api/users (Lấy tất cả hoặc ?id=...)
 router.get('/', getUsers);
@@ -15,5 +15,8 @@ router.post('/update', updateUserInfo);
 
 // POST /api/users/login (Đường dẫn mới cho đăng nhập)
 router.post('/login', login);
+
+//Xóa
+router.delete('/:id', deleteUsers);
 
 module.exports = router;
