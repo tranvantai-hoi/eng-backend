@@ -90,7 +90,7 @@ try {
 
 const deleteStudents = async (req,res) =>{
   try{
-    const {mssv} = req.body
+    const {mssv} = req.params;
     const sinhvien = await student.findByMaSV(mssv);
     if (!sinhvien) {
       return res.status(404).json({
