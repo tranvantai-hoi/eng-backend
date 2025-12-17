@@ -94,7 +94,7 @@ class Student {
   static async delete(mssv)
   {
     const query = 'DELETE FROM student WHERE "MaSV" = $1 RETURNING *';
-    const result = await pool.query(query, {mssv});
+    const result = await pool.query(query, mssv);
     return result.rows[0];
   }
   // Hàm chuẩn hóa dữ liệu
