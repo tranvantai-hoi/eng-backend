@@ -10,7 +10,6 @@ const {
   changeRound,
   deleteRegistration
 } = require('../controllers/registrationController');
-const { changeRound } = require('../models/Registration');
 
 // OTP Routes
 router.post('/create-otp', createOtp);
