@@ -144,6 +144,19 @@ const updateStatus = async (req, res, next) => {
   }
 };
 
+// Cập nhật chuyển đợt
+const changeRound = async (req, res, next) => {
+  try {
+      const { roundId, mssv, id } = req.body;
+      if (!mssv || !roundId || !id) return res.status(400).json({ message: "Thiếu thông tin" });
+      
+      const updated = await Registration.changeRound(roundId, mssv, id);
+      res.status(200).json({ success: true, data: updated, message: "Cập nhật thành công" });
+  } catch (error) {
+      next(error);
+  }
+};
+
 // Xóa đăng ký
 const deleteRegistration = async (req, res, next) => {
   try {

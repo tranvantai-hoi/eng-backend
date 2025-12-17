@@ -7,8 +7,10 @@ const {
   getRegistrationById,
   getRegistrationsByRound,
   updateStatus,
+  changeRound,
   deleteRegistration
 } = require('../controllers/registrationController');
+const { changeRound } = require('../models/Registration');
 
 // OTP Routes
 router.post('/create-otp', createOtp);
@@ -25,6 +27,9 @@ router.get('/by-id', getRegistrationById);
 router.get('/by-round/:roundId', getRegistrationsByRound);
 
 router.put('/status', updateStatus);   // PUT /api/registrations/status
+
+router.put('/changeround', changeRound);
+
 router.delete('/', deleteRegistration);
 
 module.exports = router;
