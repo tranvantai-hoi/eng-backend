@@ -91,7 +91,7 @@ class Student {
     }
   }
 // Hàm xóa sinh viên theo id
-  static async deleteStudents(mssv)
+  static async delete(mssv)
   {
     const query = 'DELETE FROM student WHERE "MaSV" = $1 RETURNING *';
     const result = await pool.query(query, [mssv]);

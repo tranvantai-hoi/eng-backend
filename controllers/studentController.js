@@ -99,7 +99,7 @@ const deleteStudents = async (req,res) =>{
       });
     }
 
-    await student.deleteStudents(mssv);
+    await student.delete(mssv);
     res.status(200).json({
       success: true,
       message: 'Đã xóa sinh viên thành công'

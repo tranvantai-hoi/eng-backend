@@ -6,6 +6,6 @@ router.get('/', getStudents);
 router.post('/update-contact', updateContactInfo);
 router.post('/update', updateStudentFullInfo);
 router.post('/import', importStudents);
-router.post('/delete', deleteStudents);
+router.delete('/delete', deleteStudents);
 module.exports = router;
 
