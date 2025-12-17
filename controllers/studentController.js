@@ -91,7 +91,7 @@ try {
 const deleteStudents = async (req,res) =>{
   try{
     const {mssv} = req.params;
-    const sinhvien = await student.findByMaSV(mssv);
+    const sinhvien = await Student.findByMaSV(mssv);
     if (!sinhvien) {
       return res.status(404).json({
         success: false,
@@ -99,7 +99,7 @@ const deleteStudents = async (req,res) =>{
       });
     }
 
-    await student.delete(mssv);
+    await Student.delete(mssv);
     res.status(200).json({
       success: true,
       message: 'Đã xóa sinh viên thành công'
