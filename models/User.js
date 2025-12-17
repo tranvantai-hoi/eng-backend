@@ -54,7 +54,8 @@ class User {
     return result.rows[0] ? this.mapUserData(result.rows[0]) : null;
   }
 
-static async delete(id) {
+static async delete(req) {
+  const {id} = req.id;
   const query=`
     DELETE FROM users
     WHERE id = $1
