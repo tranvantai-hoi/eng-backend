@@ -6,7 +6,7 @@ class Registration {
     // Join với bảng students và exam_rounds để lấy đầy đủ thông tin hiển thị
     const query = `
       SELECT r.*, 
-             s."HoTen", s."NgaySinh", s."GioiTinh", s."Lop", s."Email", s."DienThoai",
+             s."HoTen", s."NgaySinh", s."GioiTinh", s."Lop", s."email", s."dienthoai",
              er."TenDot", er."NgayThi", er."GioThi", er."DiaDiem", er."lephi"
       FROM registrations r
       JOIN students s ON r."MaSV" = s."MaSV"
