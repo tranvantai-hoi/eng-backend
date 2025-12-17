@@ -169,27 +169,37 @@ const updateUserInfo = async (req, res) => {
  // Xóa user
  const deleteUsers = async (req, res) => {
   try {
-    const { id } = req.query;
+    // 1. Lấy id từ req.params (vì route là DELETE /:id)
+    // KHÔNG dùng req.query
+    const { id } = req.params; 
 
-    if (id) {
-      const user = await User.findById(id);
-      if (!user) {
-        return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
-      }
-      delete user.password; 
-      return res.status(200).json({ success: true, data: user });
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Thiếu ID người dùng' });
     }
 
-    const users = await User.delete(id);
-    const safeUsers = users.map(u => {
-      const { password, ...rest } = u;
-      return rest;
+    // 2. Gọi Model để xóa
+    // Hàm User.delete trả về user đã xóa (nhờ RETURNING * trong SQL)
+    const deletedUser = await User.delete(id);
+
+    // 3. Kiểm tra kết quả
+    if (!deletedUser) {
+      return res.status(404).json({ success: false, message: 'Người dùng không tồn tại hoặc đã bị xóa' });
+    }
+
+    // 4. Trả về thành công
+    // Xóa mật khẩu khỏi response cho an toàn
+    delete deletedUser.password;
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Xóa người dùng thành công',
+      data: deletedUser 
     });
 
-    res.status(200).json({ success: true, data: safeUsers, count: safeUsers.length });
   } catch (error) {
-    console.error("Lỗi lấy danh sách user:", error);
-    res.status(500).json({ message: 'Lỗi server' });
+    console.error("Lỗi xóa user:", error);
+    // Đây là lý do bạn nhận được thông báo "Lỗi server" trước đó
+    return res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 };
 
