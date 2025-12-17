@@ -5,7 +5,9 @@ const {
   createOtp, 
   verifyOtp,
   getRegistrationById,
-  getRegistrationsByRound
+  getRegistrationsByRound,
+  updateStatus,
+  deleteRegistration
 } = require('../controllers/registrationController');
 
 // OTP Routes
