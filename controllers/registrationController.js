@@ -1,10 +1,10 @@
 const Registration = require('../models/Registration');
 const Student = require('../models/Student');
 const ExamRound = require('../models/ExamRound');
-// SỬA LỖI: Tên file là otp.js nên phải require đúng tên (chữ thường)
-const Otp = require('../models/otp');
+// [SỬA] Đảm bảo tên file khớp chính xác (Thường là Otp.js hoặc otp.js)
+// Nếu file model của bạn viết hoa là Otp.js, hãy sửa dòng dưới thành '../models/Otp'
+const Otp = require('../models/Otp'); 
 const { sendOtpEmail } = require("../services/emailService");
-
 
 // --- 1. Gửi OTP ---
 const createOtp = async (req, res, next) => {
@@ -12,18 +12,15 @@ const createOtp = async (req, res, next) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: 'Vui lòng cung cấp email' });
 
-    // Tạo mã ngẫu nhiên 6 số
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Lưu vào DB
+    
+    // Tạo hoặc update OTP
     await Otp.create({ email, code });
 
-    // Gửi email OTP
+    // Gửi email
     await sendOtpEmail(email, code);
-
-    // Log ra console để bạn thấy mã (Thay bằng gửi email thật sau này)
-    console.log(`[OTP SYSTEM] Mã xác thực gửi đến ${email}: ${code}`);
     
+    console.log(`[OTP] Gửi đến ${email}: ${code}`);
     res.status(200).json({ success: true, message: 'Đã gửi mã OTP thành công' });
   } catch (error) {
     console.error("Lỗi tạo OTP:", error);
@@ -31,49 +28,33 @@ const createOtp = async (req, res, next) => {
   }
 };
 
-//kiểm tra mã otp hợp lệ
 const verifyOtp = async (req, res, next) => {
   try {
-    const email = req.query.email;
-    const otp = req.query.otp;
+    const { email, otp } = req.query; // Lấy từ query parameters
 
     if (!email || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: "Thiếu email hoặc otp"
-      });
+      return res.status(400).json({ success: false, message: "Thiếu email hoặc otp" });
     }
     
-    const VLOtp = await Otp.findValidOtp(email, otp);
+    const validOtp = await Otp.findValidOtp(email, otp);
 
-    if (!VLOtp) {
-      return res.status(400).json({
-        success: false,
-        message: 'Mã OTP '+otp+', email: '+email+' không chính xác hoặc đã hết hạn'
-      });
+    if (!validOtp) {
+      return res.status(400).json({ success: false, message: 'Mã OTP không chính xác hoặc đã hết hạn' });
     }
 
-    // Xóa OTP sau khi dùng (nếu cần)
-    //await Otp.deleteOtp(email, otp);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Xác thực OTP thành công'
-    });
-
+    return res.status(200).json({ success: true, message: 'Xác thực OTP thành công' });
   } catch (error) {
-    console.error("Lỗi kiểm tra mã OTP:", error);
+    console.error("Lỗi verify OTP:", error);
     next(error);
   }
 };
 
-
-// --- 2. Đăng ký thi (Có xác thực OTP) ---
+// --- 2. Đăng ký thi ---
 const createRegistration = async (req, res, next) => {
   try {
     const { mssv, sessionId, email, phone, otp } = req.body;
 
-    // Validate đầu vào
+    // Validate cơ bản
     if (!mssv || !sessionId || !otp) {
       return res.status(400).json({ 
         success: false, 
@@ -81,73 +62,70 @@ const createRegistration = async (req, res, next) => {
       });
     }
 
-   /* // BƯỚC 1: Kiểm tra OTP
+    // B1: Xác thực OTP lần cuối để đảm bảo an toàn
     const validOtp = await Otp.findValidOtp(email, otp);
     if (!validOtp) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Mã OTP không chính xác hoặc đã hết hạn' 
-      });
-    } */
+      return res.status(400).json({ success: false, message: 'Mã OTP không hợp lệ' });
+    }
 
-    // BƯỚC 2: Kiểm tra Sinh viên
+    // B2: Kiểm tra sinh viên
     const student = await Student.findByMaSV(mssv);
     if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: `Không tìm thấy sinh viên có mã ${mssv}`
-      });
+      return res.status(404).json({ success: false, message: 'Không tìm thấy sinh viên' });
     }
 
-    // BƯỚC 3: Kiểm tra Đợt thi
+    // B3: Kiểm tra đợt thi
     const round = await ExamRound.findById(sessionId);
     if (!round) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đợt thi này'
-      });
+      return res.status(404).json({ success: false, message: 'Đợt thi không tồn tại' });
     }
 
-    // BƯỚC 4: Kiểm tra Trùng lặp
+    // B4: Kiểm tra đã đăng ký chưa
     const existing = await Registration.checkExisting(mssv, sessionId);
     if (existing) {
-      return res.status(409).json({
-        success: false,
-        message: 'Sinh viên đã đăng ký đợt thi này rồi'
-      });
+      return res.status(409).json({ success: false, message: 'Sinh viên đã đăng ký đợt thi này rồi' });
     }
 
-    // BƯỚC 5: Tạo đăng ký
-    const registration = await Registration.create({
+    // B5: Tạo đăng ký
+    const newReg = await Registration.create({
       MaSV: mssv,
       RoundId: sessionId,
-      TrangThai: 'pending'
+      TrangThai: 'pending' // Trạng thái chờ thanh toán
     });
 
-    // BƯỚC 6: Hủy OTP sau khi dùng xong
-    if (validOtp && validOtp.id) {
-        await Otp.markAsUsed(validOtp.id);
-    }
+    // B6: Hủy OTP
+    if (validOtp.id) await Otp.markAsUsed(validOtp.id);
 
     res.status(201).json({
       success: true,
-      message: 'Đăng ký thành công!',
-      data: registration
+      message: 'Đăng ký thành công',
+      data: newReg
     });
 
   } catch (error) {
-    console.error("Lỗi tạo đăng ký:", error);
+    console.error("Lỗi đăng ký:", error);
     next(error);
   }
 };
 
+// [QUAN TRỌNG] Đã sửa: Lấy tham số từ req.query thay vì req.body
 const getRegistrationById = async (req, res, next) => {
   try {
-    const { MaSV, id } = req.params;
-    const registration = await Registration.findById(MaSV,id);
-    if (!registration) return res.status(404).json({ success: false, message: 'Không tìm thấy' });
+    const { mssv, roundId } = req.query; // GET request dùng query
+    
+    if (!mssv || !roundId) {
+        return res.status(400).json({ success: false, message: 'Thiếu mssv hoặc roundId' });
+    }
+
+    const registration = await Registration.findById(mssv, roundId);
+    
+    if (!registration) {
+        return res.status(404).json({ success: false, message: 'Không tìm thấy hồ sơ đăng ký' });
+    }
+    
     res.status(200).json({ success: true, data: registration });
   } catch (error) {
+    console.error("Lỗi getRegistrationById:", error);
     next(error);
   }
 };

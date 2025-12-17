@@ -8,21 +8,18 @@ const {
   getRegistrationsByRound
 } = require('../controllers/registrationController');
 
-// --- ĐỊNH NGHĨA ROUTES ---
-
-// 1. Gửi mã OTP
-// Frontend gọi: /otp/create-otp
-// Định nghĩa: /otp/create-otp (Khớp 100%)
+// OTP Routes
 router.post('/create-otp', createOtp);
 router.get('/verify-otp', verifyOtp);
 
-// 2. Tạo đăng ký thi
-// Frontend gọi: /register
-// Định nghĩa: /register (Khớp 100%)
+// Registration Routes
 router.post('/register', createRegistration);
 
-// 3. Các route phụ (Admin hoặc xem chi tiết)
-router.get('/registrations/:id', getRegistrationById);
-router.get('/registrations/by-round/:roundId', getRegistrationsByRound);
+// Get Info Routes
+// Frontend gọi: /api/registrations/by-id?mssv=...&roundId=...
+router.get('/by-id', getRegistrationById);
+
+// Frontend gọi: /api/registrations/by-round/1
+router.get('/by-round/:roundId', getRegistrationsByRound);
 
 module.exports = router;
