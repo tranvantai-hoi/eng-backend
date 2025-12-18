@@ -87,6 +87,15 @@ const createRegistration = async (req, res, next) => {
       return res.status(409).json({ success: false, message: 'Sinh viên đã đăng ký đợt thi này rồi' });
     }
 
+    // BẬT KIỂM TRA HẠN CHẾ
+    const check = await ExamRound.isAvailable(sessionId);
+    if (!check.available) {
+        return res.status(400).json({ 
+            success: false, 
+            message: check.message 
+        });
+    }
+
     // B5: Tạo đăng ký
     const newReg = await Registration.create({
       MaSV: mssv,
