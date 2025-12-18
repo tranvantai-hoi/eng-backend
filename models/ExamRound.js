@@ -66,6 +66,46 @@ class ExamRound {
     const result = await pool.query(query, [id]);
     return result.rows[0];
   }
+
+  static async isAvailable(id) {
+    const query = `
+        SELECT 
+            er.*, 
+            (SELECT COUNT(*) FROM registrations WHERE "RoundId" = er.id) as current_count
+        FROM exam_rounds er
+        WHERE er.id = $1
+    `;
+    const result = await pool.query(query, [id]);
+    const round = result.rows[0];
+
+    if (!round) return { available: false, message: 'Đợt thi không tồn tại.' };
+
+    // 1. Kiểm tra thời hạn đăng ký (Hạn chế trước 7 ngày)
+    const examDate = new Date(round.NgayThi);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Đưa về đầu ngày để so sánh chính xác
+
+    const diffTime = examDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 7) {
+        return { 
+            available: false, 
+            message: `Đợt kiểm tra đã đóng đăng ký (Hệ thống ngừng nhận hồ sơ trước ngày thi 7 ngày).` 
+        };
+    }
+
+    // 2. Kiểm tra số lượng thí sinh
+    if (round.SoLuongToiDa > 0 && parseInt(round.current_count) >= round.SoLuongToiDa) {
+        return { 
+            available: false, 
+            message: 'Đợt kiểm tra này đã đủ số lượng thí sinh đăng ký.' 
+        };
+    }
+
+    return { available: true };
+  }
+
 }
 
 module.exports = ExamRound;
