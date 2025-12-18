@@ -39,7 +39,6 @@ app.use('/api/registrations', require('./routes/registrationRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/otp', require('./routes/registrationRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/importScores', require('./routes/registrationRoutes'));
 
 // Error handling middleware
 app.use(require('./middleware/errorHandler'));
