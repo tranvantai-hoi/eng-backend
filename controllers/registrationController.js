@@ -183,42 +183,68 @@ const getRegistrationsByRound = async (req, res, next) => {
 
 const importScores = async (req, res) => {
   try {
-      if (!req.file) {
-          return res.status(400).json({ message: 'Vui lòng tải lên một file Excel.' });
-      }
+    // 1. Kiểm tra file
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Vui lòng tải lên một file Excel.' });
+    }
 
-      const { roundId } = req.body;
-      // Chuyển roundId sang kiểu Số để khớp với kiểu INTEGER trong DB
-      const numericRoundId = parseInt(roundId); 
-      if (!numericRoundId) {
-          return res.status(400).json({ message: 'Vui lòng chọn đợt thi hợp lệ.' });
-      }
+    // 2. Kiểm tra và chuyển đổi roundId
+    const { roundId } = req.body;
+    const numericRoundId = parseInt(roundId);
+    if (!numericRoundId) {
+      return res.status(400).json({ success: false, message: 'Vui lòng chọn đợt thi hợp lệ.' });
+    }
 
-      const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    // 3. Đọc dữ liệu Excel
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-      const scoreList = sheetData.map(row => {
-          const mssv = String(row['Mã SV'] || row['MaSV'] || row['MSSV'] || '').trim();
-          if (!mssv) return null;
+    if (sheetData.length === 0) {
+      return res.status(400).json({ success: false, message: 'File Excel không có dữ liệu.' });
+    }
 
-          return {
-              mssv: mssv,
-              roundId: numericRoundId,
-              // Đảm bảo giá trị là số hoặc null, không để NaN
-              nghe: isNaN(parseFloat(row['Nghe'])) ? 0 : parseFloat(row['Nghe']),
-              noi: isNaN(parseFloat(row['Noi'])) ? 0 : parseFloat(row['Noi']),
-              doc: isNaN(parseFloat(row['Doc'])) ? 0 : parseFloat(row['Doc']),
-              viet: isNaN(parseFloat(row['Viet'])) ? 0 : parseFloat(row['Viet']),
-              ketqua: String(row['KetQua'] || row['Result'] || '').trim()
-          };
-      }).filter(item => item !== null);
+    // 4. Chuẩn hóa dữ liệu điểm
+    const scoreList = sheetData
+      .map((row) => {
+        const mssv = String(row['Mã SV'] || row['MaSV'] || row['MSSV'] || '').trim();
+        // Bỏ qua nếu dòng không có MSSV
+        if (!mssv) return null;
 
-      const updatedCount = await Registration.bulkUpdateScores(scoreList);
-      // ... trả về response
+        return {
+          mssv: mssv,
+          roundId: numericRoundId,
+          // Ép kiểu số, nếu không phải số thì để 0 (hoặc null tùy logic của bạn)
+          nghe: isNaN(parseFloat(row['Nghe'])) ? 0 : parseFloat(row['Nghe']),
+          noi: isNaN(parseFloat(row['Noi'])) ? 0 : parseFloat(row['Noi']),
+          doc: isNaN(parseFloat(row['Doc'])) ? 0 : parseFloat(row['Doc']),
+          viet: isNaN(parseFloat(row['Viet'])) ? 0 : parseFloat(row['Viet']),
+          ketqua: String(row['KetQua'] || row['Result'] || '').trim(),
+        };
+      })
+      .filter((item) => item !== null);
+
+    if (scoreList.length === 0) {
+      return res.status(400).json({ success: false, message: 'Không tìm thấy dữ liệu sinh viên hợp lệ trong file.' });
+    }
+
+    // 5. Gọi Model xử lý cập nhật hàng loạt (đã được chia chunk bên Model)
+    const updatedCount = await Registration.bulkUpdateScores(scoreList);
+
+    // 6. PHẢN HỒI JSON CHUẨN (Đảm bảo Frontend nhận được để nhảy lên 100%)
+    return res.status(200).json({
+      success: true,
+      message: `Đã cập nhật thành công điểm cho ${updatedCount} sinh viên.`,
+      updatedCount: updatedCount,
+    });
+
   } catch (error) {
-      console.error('Lỗi chi tiết:', error);
-      res.status(500).json({ message: 'Lỗi hệ thống: ' + error.message });
+    console.error('Lỗi chi tiết tại Controller:', error);
+    // Luôn trả về JSON dù là lỗi hệ thống
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi hệ thống khi xử lý file: ' + error.message,
+    });
   }
 };
 
