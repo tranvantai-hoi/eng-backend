@@ -1,5 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 const {
   createRegistration,
   createOtp, 
@@ -8,7 +11,8 @@ const {
   getRegistrationsByRound,
   updateStatus,
   changeRound,
-  deleteRegistration
+  deleteRegistration,
+  importScores
 } = require('../controllers/registrationController');
 
 // OTP Routes
@@ -30,5 +34,7 @@ router.put('/status', updateStatus);   // PUT /api/registrations/status
 router.put('/changeround', changeRound);
 
 router.delete('/', deleteRegistration);
+
+router.post('/import-scores', upload.single('file'), importScores);
 
 module.exports = router;
