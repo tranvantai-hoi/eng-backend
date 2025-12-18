@@ -48,7 +48,64 @@ class Registration {
     return result.rows[0];
   }
 
-// Đếm số lượng sinh viên đăng ký trong đợt
+  // [MỚI] Hàm cập nhật điểm thi cho một sinh viên cụ thể
+ 
+ static async updateScores(MaSV, RoundId, scores) {
+   const { nghe, noi, doc, viet, ketqua } = scores;
+   const query = `
+     UPDATE registrations
+     SET "nghe" = $1, "noi" = $2, "doc" = $3, "viet" = $4, "ketqua" = $5
+     WHERE "MaSV" = $6 AND "RoundId" = $7
+     RETURNING *
+   `;
+   const values = [nghe, noi, doc, viet, ketqua, MaSV, RoundId];
+   const result = await pool.query(query, values);
+   return result.rows[0];
+ }
+
+ 
+  // [MỚI] Hàm cập nhật điểm hàng loạt (Dùng cho import từ Excel)
+  // @param {Array} scoreList Danh sách các đối tượng chứa: { mssv, roundId, nghe, noi, doc, viet, ketqua }
+  
+ static async bulkUpdateScores(scoreList) {
+   const client = await pool.connect();
+   try {
+     await client.query('BEGIN'); // Sử dụng Transaction để đảm bảo an toàn dữ liệu
+     let count = 0;
+
+     for (const item of scoreList) {
+       const query = `
+         UPDATE registrations
+         SET "nghe" = $1, "noi" = $2, "doc" = $3, "viet" = $4, "ketqua" = $5
+         WHERE "MaSV" = $6 AND "RoundId" = $7
+       `;
+       
+       // Chuyển đổi dữ liệu về số hoặc null nếu rỗng
+       const values = [
+         item.nghe !== undefined ? item.nghe : null,
+         item.noi !== undefined ? item.noi : null,
+         item.doc !== undefined ? item.doc : null,
+         item.viet !== undefined ? item.viet : null,
+         item.ketqua || null,
+         item.mssv,
+         item.roundId
+       ];
+
+       const res = await client.query(query, values);
+       if (res.rowCount > 0) count++;
+     }
+
+     await client.query('COMMIT');
+     return count; // Trả về số lượng dòng đã cập nhật thành công
+   } catch (error) {
+     await client.query('ROLLBACK');
+     throw error;
+   } finally {
+     client.release();
+   }
+ }
+
+  // Đếm số lượng sinh viên đăng ký trong đợt
 static async count(RoundId) {
   const query = `SELECT COUNT(*) as soluong FROM registrations 
                   WHERE "RoundId" = $1 GROUP BY "RoundId"`;
