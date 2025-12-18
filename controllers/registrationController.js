@@ -5,6 +5,7 @@ const ExamRound = require('../models/ExamRound');
 // Nếu file model của bạn viết hoa là Otp.js, hãy sửa dòng dưới thành '../models/Otp'
 const Otp = require('../models/otp'); 
 const { sendOtpEmail } = require("../services/emailService");
+const xlsx = require('xlsx');
 
 // --- 1. Gửi OTP ---
 const createOtp = async (req, res, next) => {
