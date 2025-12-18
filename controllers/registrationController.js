@@ -188,40 +188,37 @@ const importScores = async (req, res) => {
       }
 
       const { roundId } = req.body;
-      if (!roundId) {
-          return res.status(400).json({ message: 'Vui lòng chọn đợt thi để cập nhật điểm.' });
+      // Chuyển roundId sang kiểu Số để khớp với kiểu INTEGER trong DB
+      const numericRoundId = parseInt(roundId); 
+      if (!numericRoundId) {
+          return res.status(400).json({ message: 'Vui lòng chọn đợt thi hợp lệ.' });
       }
 
-      // Đọc dữ liệu từ Buffer
       const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
       const sheetName = workbook.SheetNames[0];
       const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-      if (sheetData.length === 0) {
-          return res.status(400).json({ message: 'File Excel không có dữ liệu.' });
-      }
+      const scoreList = sheetData.map(row => {
+          const mssv = String(row['Mã SV'] || row['MaSV'] || row['MSSV'] || '').trim();
+          if (!mssv) return null;
 
-      // Chuyển đổi dữ liệu
-      const scoreList = sheetData.map(row => ({
-          mssv: String(row['Mã SV'] || row['MaSV'] || row['MSSV'] || '').trim(),
-          roundId: roundId,
-          nghe: parseFloat(row['Nghe'] || row['Listening']) || 0,
-          noi: parseFloat(row['Noi'] || row['Speaking']) || 0,
-          doc: parseFloat(row['Doc'] || row['Reading']) || 0,
-          viet: parseFloat(row['Viet'] || row['Writing']) || 0,
-          ketqua: String(row['KetQua'] || row['Result'] || '').trim()
-      })).filter(item => item.mssv !== ''); // Loại bỏ dòng trống
+          return {
+              mssv: mssv,
+              roundId: numericRoundId,
+              // Đảm bảo giá trị là số hoặc null, không để NaN
+              nghe: isNaN(parseFloat(row['Nghe'])) ? 0 : parseFloat(row['Nghe']),
+              noi: isNaN(parseFloat(row['Noi'])) ? 0 : parseFloat(row['Noi']),
+              doc: isNaN(parseFloat(row['Doc'])) ? 0 : parseFloat(row['Doc']),
+              viet: isNaN(parseFloat(row['Viet'])) ? 0 : parseFloat(row['Viet']),
+              ketqua: String(row['KetQua'] || row['Result'] || '').trim()
+          };
+      }).filter(item => item !== null);
 
       const updatedCount = await Registration.bulkUpdateScores(scoreList);
-
-      res.status(200).json({
-          success: true,
-          message: `Cập nhật thành công điểm cho ${updatedCount} sinh viên.`,
-          updatedCount
-      });
+      // ... trả về response
   } catch (error) {
-      console.error('Lỗi Import điểm chi tiết:', error); // Log này sẽ hiện ở console backend để bạn debug
-      res.status(500).json({ message: 'Lỗi hệ thống khi xử lý file Excel: ' + error.message });
+      console.error('Lỗi chi tiết:', error);
+      res.status(500).json({ message: 'Lỗi hệ thống: ' + error.message });
   }
 };
 
