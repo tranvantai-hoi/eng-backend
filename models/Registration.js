@@ -48,6 +48,14 @@ class Registration {
     return result.rows[0];
   }
 
+// Đếm số lượng sinh viên đăng ký trong đợt
+static async count(RoundId) {
+  const query = `SELECT COUNT(*) as soluong FROM registrations 
+                  WHERE "RoundId" = $1 GROUP BY "RoundId"`;
+  const result = await pool.query(query, [RoundId]);
+  return result.rows[0];
+}
+
   static async checkExisting(MaSV, RoundId) {
     const query = 'SELECT * FROM registrations WHERE "MaSV" = $1 AND "RoundId" = $2';
     const result = await pool.query(query, [MaSV, RoundId]);
