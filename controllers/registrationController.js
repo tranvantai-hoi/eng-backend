@@ -192,31 +192,36 @@ const importScores = async (req, res) => {
           return res.status(400).json({ message: 'Vui lòng chọn đợt thi để cập nhật điểm.' });
       }
 
-      // Đọc dữ liệu từ Buffer (file được upload qua multer)
+      // Đọc dữ liệu từ Buffer
       const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
       const sheetName = workbook.SheetNames[0];
       const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-      // Chuyển đổi dữ liệu từ Excel sang định dạng mà model bulkUpdateScores yêu cầu
+      if (sheetData.length === 0) {
+          return res.status(400).json({ message: 'File Excel không có dữ liệu.' });
+      }
+
+      // Chuyển đổi dữ liệu
       const scoreList = sheetData.map(row => ({
-          mssv: row['Mã SV'] || row['MaSV'] || row['MSSV'], // Hỗ trợ nhiều cách đặt tên cột
+          mssv: String(row['Mã SV'] || row['MaSV'] || row['MSSV'] || '').trim(),
           roundId: roundId,
-          nghe: row['Nghe'] || row['Listening'] || 0,
-          noi: row['Noi'] || row['Speaking'] || 0,
-          doc: row['Doc'] || row['Reading'] || 0,
-          viet: row['Viet'] || row['Writing'] || 0,
-          ketqua: row['KetQua'] || row['Result'] || ''
-      }));
+          nghe: parseFloat(row['Nghe'] || row['Listening']) || 0,
+          noi: parseFloat(row['Noi'] || row['Speaking']) || 0,
+          doc: parseFloat(row['Doc'] || row['Reading']) || 0,
+          viet: parseFloat(row['Viet'] || row['Writing']) || 0,
+          ketqua: String(row['KetQua'] || row['Result'] || '').trim()
+      })).filter(item => item.mssv !== ''); // Loại bỏ dòng trống
 
       const updatedCount = await Registration.bulkUpdateScores(scoreList);
 
       res.status(200).json({
+          success: true,
           message: `Cập nhật thành công điểm cho ${updatedCount} sinh viên.`,
           updatedCount
       });
   } catch (error) {
-      console.error('Lỗi Import điểm:', error);
-      res.status(500).json({ message: 'Lỗi hệ thống khi nhập điểm.' });
+      console.error('Lỗi Import điểm chi tiết:', error); // Log này sẽ hiện ở console backend để bạn debug
+      res.status(500).json({ message: 'Lỗi hệ thống khi xử lý file Excel: ' + error.message });
   }
 };
 
