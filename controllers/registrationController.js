@@ -177,6 +177,45 @@ const getRegistrationsByRound = async (req, res, next) => {
     res.status(200).json({ success: true, data: registrations });
   } catch (error) {
     next(error);
+  } 
+};
+
+const importScores = async (req, res) => {
+  try {
+      if (!req.file) {
+          return res.status(400).json({ message: 'Vui lòng tải lên một file Excel.' });
+      }
+
+      const { roundId } = req.body;
+      if (!roundId) {
+          return res.status(400).json({ message: 'Vui lòng chọn đợt thi để cập nhật điểm.' });
+      }
+
+      // Đọc dữ liệu từ Buffer (file được upload qua multer)
+      const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+      // Chuyển đổi dữ liệu từ Excel sang định dạng mà model bulkUpdateScores yêu cầu
+      const scoreList = sheetData.map(row => ({
+          mssv: row['Mã SV'] || row['MaSV'] || row['MSSV'], // Hỗ trợ nhiều cách đặt tên cột
+          roundId: roundId,
+          nghe: row['Nghe'] || row['Listening'] || 0,
+          noi: row['Noi'] || row['Speaking'] || 0,
+          doc: row['Doc'] || row['Reading'] || 0,
+          viet: row['Viet'] || row['Writing'] || 0,
+          ketqua: row['KetQua'] || row['Result'] || ''
+      }));
+
+      const updatedCount = await Registration.bulkUpdateScores(scoreList);
+
+      res.status(200).json({
+          message: `Cập nhật thành công điểm cho ${updatedCount} sinh viên.`,
+          updatedCount
+      });
+  } catch (error) {
+      console.error('Lỗi Import điểm:', error);
+      res.status(500).json({ message: 'Lỗi hệ thống khi nhập điểm.' });
   }
 };
 
@@ -188,5 +227,6 @@ module.exports = {
   getRegistrationsByRound,
   updateStatus,
   changeRound,
-  deleteRegistration
+  deleteRegistration,
+  importScores
 };
