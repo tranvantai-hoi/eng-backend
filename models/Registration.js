@@ -78,17 +78,34 @@ class Registration {
     try {
       await client.query('BEGIN');
       let totalProcessedCount = 0;
+      let skippedCount = 0;
+
       const chunkSize = 100;
       
       for (let i = 0; i < scoreList.length; i += chunkSize) {
         const chunk = scoreList.slice(i, i + chunkSize);
         
         for (const item of chunk) {
-          // BƯỚC BỔ SUNG: Kiểm tra sinh viên có tồn tại không trước khi xử lý
-          const checkStudent = await client.query('SELECT 1 FROM students WHERE "MaSV" = $1', [item.mssv]);
+          // 1. Kiểm tra trạng thái đợt thi trước khi xử lý
+          const roundCheck = await client.query(
+            'SELECT "TrangThai" FROM exam_rounds WHERE id = $1', 
+            [item.roundId]
+          );
+
+          // Nếu đợt thi không tồn tại hoặc không ở trạng thái 'active', bỏ qua bản ghi này
+          if (roundCheck.rowCount === 0 || roundCheck.rows[0].TrangThai.toLowerCase() !== 'active') {
+            skippedCount++;
+            continue; 
+          }
+
+          // 2. Kiểm tra sinh viên có tồn tại không để tránh lỗi Foreign Key
+          const studentCheck = await client.query(
+            'SELECT 1 FROM students WHERE "MaSV" = $1', 
+            [item.mssv]
+          );
           
-          if (checkStudent.rowCount > 0) {
-            // Nếu sinh viên tồn tại, thực hiện UPSERT (Insert hoặc Update)
+          if (studentCheck.rowCount > 0) {
+            // 3. Thực hiện UPSERT (Cập nhật nếu có, Thêm mới nếu chưa)
             const query = `
               INSERT INTO registrations ("MaSV", "RoundId", "nghe", "noi", "doc", "viet", "ketqua", "TrangThai", "CreatedAt")
               VALUES ($1, $2, $3, $4, $5, $6, $7, 'paid', NOW())
@@ -110,19 +127,22 @@ class Registration {
               item.viet !== undefined ? item.viet : null,
               item.ketqua || null
             ];
-  
+
             const res = await client.query(query, values);
             if (res.rowCount > 0) totalProcessedCount++;
-          } else {
-            // Nếu sinh viên không tồn tại, bỏ qua và log lỗi ra console để kiểm tra
-            console.warn(`Sinh viên có mã ${item.mssv} không tồn tại trong hệ thống. Bỏ qua dòng này.`);
           }
         }
       }
-  
+
       await client.query('COMMIT');
+      
+      // Có thể log ra số lượng bị bỏ qua để admin biết
+      if (skippedCount > 0) {
+        console.warn(`Đã bỏ qua ${skippedCount} bản ghi do đợt thi đã đóng hoặc không tồn tại.`);
+      }
+
       return totalProcessedCount;
-  
+
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
