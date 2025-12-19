@@ -78,44 +78,51 @@ class Registration {
     try {
       await client.query('BEGIN');
       let totalProcessedCount = 0;
-
       const chunkSize = 100;
       
       for (let i = 0; i < scoreList.length; i += chunkSize) {
         const chunk = scoreList.slice(i, i + chunkSize);
         
         for (const item of chunk) {
-          // Câu lệnh UPSERT: Nếu trùng (MaSV, RoundId) thì Update, nếu không thì Insert mới
-          const query = `
-            INSERT INTO registrations ("MaSV", "RoundId", "nghe", "noi", "doc", "viet", "ketqua", "TrangThai", "CreatedAt")
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 'paid', NOW())
-            ON CONFLICT ("MaSV", "RoundId") 
-            DO UPDATE SET 
-              "nghe" = EXCLUDED."nghe",
-              "noi" = EXCLUDED."noi",
-              "doc" = EXCLUDED."doc",
-              "viet" = EXCLUDED."viet",
-              "ketqua" = EXCLUDED."ketqua"
-          `;
+          // BƯỚC BỔ SUNG: Kiểm tra sinh viên có tồn tại không trước khi xử lý
+          const checkStudent = await client.query('SELECT 1 FROM students WHERE "MaSV" = $1', [item.mssv]);
           
-          const values = [
-            item.mssv,
-            item.roundId,
-            item.nghe !== undefined ? item.nghe : null,
-            item.noi !== undefined ? item.noi : null,
-            item.doc !== undefined ? item.doc : null,
-            item.viet !== undefined ? item.viet : null,
-            item.ketqua || null
-          ];
-
-          const res = await client.query(query, values);
-          if (res.rowCount > 0) totalProcessedCount++;
+          if (checkStudent.rowCount > 0) {
+            // Nếu sinh viên tồn tại, thực hiện UPSERT (Insert hoặc Update)
+            const query = `
+              INSERT INTO registrations ("MaSV", "RoundId", "nghe", "noi", "doc", "viet", "ketqua", "TrangThai", "CreatedAt")
+              VALUES ($1, $2, $3, $4, $5, $6, $7, 'paid', NOW())
+              ON CONFLICT ("MaSV", "RoundId") 
+              DO UPDATE SET 
+                "nghe" = EXCLUDED."nghe",
+                "noi" = EXCLUDED."noi",
+                "doc" = EXCLUDED."doc",
+                "viet" = EXCLUDED."viet",
+                "ketqua" = EXCLUDED."ketqua"
+            `;
+            
+            const values = [
+              item.mssv,
+              item.roundId,
+              item.nghe !== undefined ? item.nghe : null,
+              item.noi !== undefined ? item.noi : null,
+              item.doc !== undefined ? item.doc : null,
+              item.viet !== undefined ? item.viet : null,
+              item.ketqua || null
+            ];
+  
+            const res = await client.query(query, values);
+            if (res.rowCount > 0) totalProcessedCount++;
+          } else {
+            // Nếu sinh viên không tồn tại, bỏ qua và log lỗi ra console để kiểm tra
+            console.warn(`Sinh viên có mã ${item.mssv} không tồn tại trong hệ thống. Bỏ qua dòng này.`);
+          }
         }
       }
-
+  
       await client.query('COMMIT');
       return totalProcessedCount;
-
+  
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
