@@ -50,18 +50,24 @@ class Registration {
 
   // [MỚI] Hàm cập nhật điểm thi cho một sinh viên cụ thể
  
- static async updateScores(MaSV, RoundId, scores) {
-   const { nghe, noi, doc, viet, ketqua } = scores;
-   const query = `
-     UPDATE registrations
-     SET "nghe" = $1, "noi" = $2, "doc" = $3, "viet" = $4, "ketqua" = $5
-     WHERE "MaSV" = $6 AND "RoundId" = $7
-     RETURNING *
-   `;
-   const values = [nghe, noi, doc, viet, ketqua, MaSV, RoundId];
-   const result = await pool.query(query, values);
-   return result.rows[0];
- }
+  static async updateScores(MaSV, RoundId, scores) {
+    const { nghe, noi, doc, viet, ketqua } = scores;
+    const query = `
+      INSERT INTO registrations ("MaSV", "RoundId", "nghe", "noi", "doc", "viet", "ketqua", "TrangThai", "CreatedAt")
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'paid', NOW())
+      ON CONFLICT ("MaSV", "RoundId") 
+      DO UPDATE SET 
+        "nghe" = EXCLUDED."nghe",
+        "noi" = EXCLUDED."noi",
+        "doc" = EXCLUDED."doc",
+        "viet" = EXCLUDED."viet",
+        "ketqua" = EXCLUDED."ketqua"
+      RETURNING *;
+    `;
+    const values = [MaSV, RoundId, nghe, noi, doc, viet, ketqua];
+    const result = await pool.query(query, values);
+    return result.rows[0];
+  }
 
  
   // [MỚI] Hàm cập nhật điểm hàng loạt (Dùng cho import từ Excel)
@@ -70,47 +76,51 @@ class Registration {
   static async bulkUpdateScores(scoreList) {
     const client = await pool.connect();
     try {
-      await client.query('BEGIN'); // Sử dụng Transaction để đảm bảo tính toàn vẹn
-      let totalUpdatedCount = 0;
+      await client.query('BEGIN');
+      let totalProcessedCount = 0;
 
-      // Cấu hình kích thước mỗi chunk (ví dụ: 100 dòng mỗi đợt)
-      const chunkSize = 100; 
+      const chunkSize = 100;
       
       for (let i = 0; i < scoreList.length; i += chunkSize) {
-        // Chia nhỏ mảng gốc thành các chunk
         const chunk = scoreList.slice(i, i + chunkSize);
         
-        // Xử lý từng bản ghi trong chunk
         for (const item of chunk) {
+          // Câu lệnh UPSERT: Nếu trùng (MaSV, RoundId) thì Update, nếu không thì Insert mới
           const query = `
-            UPDATE registrations
-            SET "nghe" = $1, "noi" = $2, "doc" = $3, "viet" = $4, "ketqua" = $5
-            WHERE "MaSV" = $6 AND "RoundId" = $7
+            INSERT INTO registrations ("MaSV", "RoundId", "nghe", "noi", "doc", "viet", "ketqua", "TrangThai", "CreatedAt")
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'paid', NOW())
+            ON CONFLICT ("MaSV", "RoundId") 
+            DO UPDATE SET 
+              "nghe" = EXCLUDED."nghe",
+              "noi" = EXCLUDED."noi",
+              "doc" = EXCLUDED."doc",
+              "viet" = EXCLUDED."viet",
+              "ketqua" = EXCLUDED."ketqua"
           `;
           
           const values = [
+            item.mssv,
+            item.roundId,
             item.nghe !== undefined ? item.nghe : null,
             item.noi !== undefined ? item.noi : null,
             item.doc !== undefined ? item.doc : null,
             item.viet !== undefined ? item.viet : null,
-            item.ketqua || null,
-            item.mssv,
-            item.roundId
+            item.ketqua || null
           ];
 
           const res = await client.query(query, values);
-          if (res.rowCount > 0) totalUpdatedCount++; // Tích lũy số dòng thành công
+          if (res.rowCount > 0) totalProcessedCount++;
         }
       }
 
-      await client.query('COMMIT'); // Xác nhận tất cả các thay đổi
-      return totalUpdatedCount; // Trả về con số thực tế để Controller hiển thị thông báo
+      await client.query('COMMIT');
+      return totalProcessedCount;
 
     } catch (error) {
-      await client.query('ROLLBACK'); // Hoàn tác nếu bất kỳ dòng nào bị lỗi
+      await client.query('ROLLBACK');
       throw error;
     } finally {
-      client.release(); // Trả kết nối về pool
+      client.release();
     }
   }
 
